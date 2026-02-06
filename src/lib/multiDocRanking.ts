@@ -80,9 +80,10 @@ function normalizeForMatch(input: string) {
 
 /**
  * Minimum word count for JD context to be treated as meaningful.
- * "Test" (1 word) = ignored. "Farming Agriculture Tractors" (3 words) = used.
+ * "Test" (1 word) = ignored — too vague for any matching.
+ * "agriculture farming" (2 words) = used — domain-specific enough.
  */
-const MIN_CONTEXT_WORDS = 3;
+const MIN_CONTEXT_WORDS = 2;
 
 export function isContextMeaningful(contextText: string): boolean {
   const words = contextText.trim().split(/\s+/).filter((w) => w.length >= 2);
@@ -238,47 +239,66 @@ export function assessRecommendation(params: {
   const adequateThreshold = 18;
   const weakThreshold = 14;
 
-  // JD provided but NO candidate matches — don't recommend anyone
+  // ── RULE 1: JD provided but NO candidate matches the role ──
   if (contextUsed && topContextFit < 20) {
     return {
       strength: "none",
       headline: "No candidate matches your job description",
-      subtext: `The top resume scores ${topTotal}/30 on structure, but ${topContextFit}% JD fit. These candidates don't appear to align with the role. Consider expanding your pipeline or reposting the role with clearer requirements.`
+      subtext: `The top resume scores ${topTotal}/30 on structure, but only ${topContextFit}% JD keyword match. These resumes don't align with the role you described. Consider sourcing candidates with relevant domain experience.`
     };
   }
 
+  // ── RULE 2: All resumes are weak ──
   if (topTotal < weakThreshold) {
     return {
       strength: "none",
       headline: "No strong candidates found",
-      subtext: "None of the uploaded resumes show enough evidence to make a confident recommendation. Consider expanding your candidate pipeline or requesting more detailed resumes."
+      subtext: "None of the uploaded resumes demonstrate enough quantified achievements, clear structure, or ownership signals to recommend. Consider requesting more detailed resumes or expanding your candidate pool."
     };
   }
 
-  if (topTotal < adequateThreshold || (gap < 2 && topTotal < strongThreshold)) {
+  // ── RULE 3: Candidates are tied or nearly tied (gap 0-1) ──
+  if (gap <= 1) {
+    const jdHint = contextUsed
+      ? "Review JD fit scores above to break the tie."
+      : "Add a job description to differentiate candidates by role fit.";
     return {
       strength: "weak",
-      headline: "No clear winner — further screening needed",
-      subtext: `Scores are close (gap: ${gap} points) and no candidate stands out. Consider interviewing all shortlisted candidates to differentiate.`
+      headline: gap === 0
+        ? "Candidates are evenly matched"
+        : "Candidates are nearly tied",
+      subtext: gap === 0
+        ? `All top candidates scored ${topTotal}/30 — no meaningful difference in resume quality. ${jdHint}`
+        : `The gap is only ${gap} point — too close to call based on resume alone. ${jdHint}`
     };
   }
 
+  // ── RULE 4: Small gap (2-3 points), not decisive ──
+  if (gap <= 3) {
+    return {
+      strength: "weak",
+      headline: "Slight edge, but not decisive",
+      subtext: `The top candidate leads by ${gap} points out of 30. This is a small gap — consider interviewing both before deciding. ${contextUsed ? "Check JD fit scores to see if one aligns better with the role." : "Add a JD to see which candidate fits the actual role better."}`
+    };
+  }
+
+  // ── RULE 5: Clear frontrunner (gap 4+ and strong score) ──
   if (topTotal >= strongThreshold && gap >= 4) {
     const fitNote = contextUsed && topContextFit < 50
-      ? " JD fit is moderate — verify role alignment in the interview."
+      ? " However, JD fit is moderate — verify role alignment in the interview."
       : "";
     return {
       strength: "strong",
       headline: "Clear frontrunner identified",
-      subtext: `The top candidate shows significantly stronger evidence across multiple dimensions (${gap}-point lead).${fitNote}`
+      subtext: `The top candidate leads by ${gap} points across 6 dimensions — a meaningful gap that signals stronger evidence of impact, clarity, and ownership.${fitNote}`
     };
   }
 
-  // moderate: one candidate is stronger but not decisive
+  // ── RULE 6: Moderate gap (4+) but score isn't outstanding ──
   return {
     strength: "moderate",
-    headline: "One candidate is stronger on resume quality",
-    subtext: `The top candidate has a ${gap}-point edge. Consider interviewing both — the gap isn't decisive. ${contextUsed ? "Check JD fit scores above." : "Add a JD for fit analysis."}`
+    headline: "One candidate shows a meaningful lead",
+    subtext: `The top candidate leads by ${gap} points (${topTotal}/30 total). The gap is notable but the overall score isn't exceptional — interview both, but prioritize the leader. ${contextUsed ? "Cross-reference with JD fit scores." : "Add a JD for role-specific fit analysis."}`
   };
 }
 

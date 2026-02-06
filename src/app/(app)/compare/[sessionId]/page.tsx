@@ -304,7 +304,7 @@ export default function ComparePage() {
     return lines.length > 1 ? lines : null;
   };
 
-  const hasJd = jobDescription.trim().split(/\s+/).filter((w) => w.length >= 2).length >= 3;
+  const hasJd = jobDescription.trim().split(/\s+/).filter((w) => w.length >= 2).length >= 2;
 
   return (
     <div className="flex flex-col gap-6">

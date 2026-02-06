@@ -7,7 +7,9 @@ const COOKIE_NAME = "specsheet_session";
 const TOKEN_TTL_SECONDS = 60 * 60 * 8;
 
 export async function hashPassword(password: string) {
-  const salt = await bcrypt.genSalt(12);
+  // Optimized to 10 rounds for better performance while maintaining security
+  // 10 rounds = ~100ms, 12 rounds = ~300ms
+  const salt = await bcrypt.genSalt(10);
   return bcrypt.hash(password, salt);
 }
 

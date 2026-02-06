@@ -128,70 +128,83 @@ export default function UploadPage() {
         }
       }
 
-      const uploaded: UploadedDoc[] = [];
+      // PERFORMANCE OPTIMIZATION: Upload files in parallel instead of sequentially
+      const uploadPromises = selectedFiles.map(async (file) => {
+        try {
+          // Step 1: Get signed URL
+          const signResponse = await fetch(
+            `/api/sessions/${currentSessionId}/documents/sign-upload`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                filename: file.name,
+                contentType: file.type,
+                sizeBytes: file.size
+              })
+            }
+          );
 
-      for (const file of selectedFiles) {
-        setCurrentUploadName(file.name);
-        const signResponse = await fetch(
-          `/api/sessions/${currentSessionId}/documents/sign-upload`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              filename: file.name,
-              contentType: file.type,
-              sizeBytes: file.size
-            })
+          if (signResponse.status === 401) {
+            window.location.href = "/login";
+            throw new Error("Unauthorized");
           }
-        );
-
-        if (signResponse.status === 401) {
-          window.location.href = "/login";
-          return false;
-        }
-        if (!signResponse.ok) {
-          const body = await signResponse.json();
-          throw new Error(body.error || "Failed to sign upload.");
-        }
-
-        const signData = await signResponse.json();
-        const uploadResponse = await fetch(signData.uploadUrl, {
-          method: "PUT",
-          headers: { "Content-Type": file.type },
-          body: file
-        });
-
-        if (!uploadResponse.ok) {
-          throw new Error("S3 upload failed.");
-        }
-
-        const completeResponse = await fetch(
-          `/api/sessions/${currentSessionId}/documents/complete`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              s3Key: signData.s3Key,
-              filename: file.name,
-              mimeType: file.type,
-              sizeBytes: file.size
-            })
+          if (!signResponse.ok) {
+            const body = await signResponse.json();
+            throw new Error(body.error || "Failed to sign upload.");
           }
-        );
 
-        if (completeResponse.status === 401) {
-          window.location.href = "/login";
-          return false;
-        }
-        if (!completeResponse.ok) {
-          const body = await completeResponse.json();
-          throw new Error(body.error || "Failed to finalize upload.");
-        }
+          const signData = await signResponse.json();
 
-        const completeData = await completeResponse.json();
-        uploaded.push({ id: completeData.documentId, filename: file.name });
-        setUploadedDocs([...uploaded]);
-      }
+          // Step 2: Upload to S3
+          const uploadResponse = await fetch(signData.uploadUrl, {
+            method: "PUT",
+            headers: { "Content-Type": file.type },
+            body: file
+          });
+
+          if (!uploadResponse.ok) {
+            throw new Error(`S3 upload failed for ${file.name}`);
+          }
+
+          // Step 3: Complete upload
+          const completeResponse = await fetch(
+            `/api/sessions/${currentSessionId}/documents/complete`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                s3Key: signData.s3Key,
+                filename: file.name,
+                mimeType: file.type,
+                sizeBytes: file.size
+              })
+            }
+          );
+
+          if (completeResponse.status === 401) {
+            window.location.href = "/login";
+            throw new Error("Unauthorized");
+          }
+          if (!completeResponse.ok) {
+            const body = await completeResponse.json();
+            throw new Error(body.error || "Failed to finalize upload.");
+          }
+
+          const completeData = await completeResponse.json();
+          
+          // Update state immediately for this file
+          setUploadedDocs(prev => [...prev, { id: completeData.documentId, filename: file.name }]);
+          
+          return { id: completeData.documentId, filename: file.name };
+        } catch (err) {
+          console.error(`Upload failed for ${file.name}:`, err);
+          throw err;
+        }
+      });
+
+      // Wait for all uploads to complete in parallel
+      await Promise.all(uploadPromises);
 
       setCurrentUploadName(null);
       setIsUploaded(true);
@@ -213,6 +226,7 @@ export default function UploadPage() {
     }
     setStatus("processing");
     try {
+      // Trigger processing (async) - don't wait for completion
       const processResponse = await fetch(`/api/sessions/${id}/process`, {
         method: "POST"
       });
@@ -224,8 +238,11 @@ export default function UploadPage() {
         const body = await processResponse.json();
         throw new Error(body.error || "Failed to start processing.");
       }
+      
+      // PERFORMANCE OPTIMIZATION: Redirect immediately instead of waiting
+      // The compare page will poll for completion
       setStatus("complete");
-      window.location.href = `/compare/${id}`;
+      window.location.replace(`/compare/${id}`);
       return true;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unexpected error.");

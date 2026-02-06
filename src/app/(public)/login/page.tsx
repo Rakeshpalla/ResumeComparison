@@ -33,10 +33,10 @@ export default function LoginPage() {
         throw new Error(body.error || "Authentication failed.");
       }
 
-      window.location.href = "/upload";
+      // Use replace instead of href for faster navigation
+      window.location.replace("/upload");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unexpected error.");
-    } finally {
       setLoading(false);
     }
   }

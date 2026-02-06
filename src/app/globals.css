@@ -4,15 +4,84 @@
 
 :root {
   color-scheme: light;
+  --color-primary: 99 102 241; /* indigo-500 */
+  --color-primary-dark: 79 70 229; /* indigo-600 */
+  --color-success: 34 197 94; /* green-500 */
+  --color-warning: 234 179 8; /* yellow-500 */
+  --color-error: 239 68 68; /* red-500 */
+}
+
+* {
+  @apply border-slate-200;
 }
 
 body {
-  @apply bg-slate-50 text-slate-900;
+  @apply bg-gradient-to-br from-slate-50 via-indigo-50/30 to-slate-50 text-slate-900 antialiased;
 }
 
+/* Modern input styles */
 input,
-button,
 select,
 textarea {
-  @apply focus:outline-none focus:ring-2 focus:ring-slate-400;
+  @apply focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200;
+}
+
+input:disabled,
+select:disabled,
+textarea:disabled {
+  @apply opacity-60 cursor-not-allowed;
+}
+
+/* Modern button styles */
+button {
+  @apply focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200;
+}
+
+button:active {
+  @apply scale-95;
+}
+
+/* Smooth scrolling */
+html {
+  @apply scroll-smooth;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  @apply w-2 h-2;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-slate-100;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-slate-300 rounded-full hover:bg-slate-400;
+}
+
+/* Loading animation */
+@keyframes shimmer {
+  0% { background-position: -1000px 0; }
+  100% { background-position: 1000px 0; }
+}
+
+.animate-shimmer {
+  animation: shimmer 2s infinite linear;
+  background: linear-gradient(to right, #f1f5f9 0%, #e2e8f0 20%, #f1f5f9 40%, #f1f5f9 100%);
+  background-size: 1000px 100%;
+}
+
+/* Fade in animation */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Card hover effect */
+.card-hover {
+  @apply transition-all duration-300 hover:shadow-xl hover:-translate-y-1;
 }

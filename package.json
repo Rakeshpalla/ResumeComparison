@@ -1,0 +1,52 @@
+{
+  "name": "specsheet-compare",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "kill:3000": "node scripts/kill-port.mjs 3000",
+    "kill:3100": "node scripts/kill-port.mjs 3100",
+    "clean:next": "node scripts/clean-next-cache.mjs",
+    "predev": "npm run clean:next",
+    "dev": "next dev",
+    "dev:clean": "npm run clean:next && next dev",
+    "preview": "npm run kill:3000 && npm run clean:next && next build && next start",
+    "portal": "npm run preview",
+    "portal:test": "npm run kill:3100 && npm run clean:next && next build && next start -p 3100",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.552.0",
+    "@aws-sdk/s3-request-presigner": "^3.552.0",
+    "@prisma/client": "^5.10.2",
+    "bcryptjs": "^2.4.3",
+    "jose": "^5.6.3",
+    "mammoth": "^1.11.0",
+    "next": "^14.2.3",
+    "pdf-parse": "^1.1.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "xlsx": "^0.18.5",
+    "xlsx-js-style": "^1.2.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.58.1",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/node": "^20.12.7",
+    "@types/pdf-parse": "^1.1.4",
+    "@types/react": "^18.3.1",
+    "@types/react-dom": "^18.3.1",
+    "autoprefixer": "^10.4.19",
+    "pdf-lib": "^1.17.1",
+    "postcss": "^8.4.38",
+    "prisma": "^5.10.2",
+    "tailwindcss": "^3.4.3",
+    "typescript": "^5.4.5"
+  }
+}

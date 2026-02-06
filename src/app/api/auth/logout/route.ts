@@ -1,0 +1,21 @@
+import { NextResponse } from "next/server";
+import { clearSessionCookie } from "../../../../lib/auth";
+
+export const runtime = "nodejs";
+
+export async function GET(request: Request) {
+  // Browser navigation friendly logout (clears cookie + redirects).
+  const redirectUrl = new URL("/login", request.url);
+  const response = NextResponse.redirect(redirectUrl);
+  clearSessionCookie(response, request);
+  // Best-effort browser-side cleanup to prevent state leaks.
+  response.headers.set("Clear-Site-Data", "\"cache\", \"cookies\", \"storage\"");
+  return response;
+}
+
+export async function POST(request: Request) {
+  const response = NextResponse.json({ success: true });
+  clearSessionCookie(response, request);
+  response.headers.set("Clear-Site-Data", "\"cache\", \"cookies\", \"storage\"");
+  return response;
+}

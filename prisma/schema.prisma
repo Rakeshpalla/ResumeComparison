@@ -1,0 +1,88 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String              @id @default(uuid())
+  email        String              @unique
+  passwordHash String
+  tenantId     String?             @db.VarChar(64)
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  sessions     ComparisonSession[]
+  documents    Document[]
+}
+
+model ComparisonSession {
+  id          String               @id @default(uuid())
+  userId      String
+  tenantId    String?              @db.VarChar(64)
+  idempotencyKey String?           @db.VarChar(128)
+  status      SessionStatus        @default(PENDING)
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+  user        User                 @relation(fields: [userId], references: [id])
+  documents   Document[]
+  normalized  NormalizedAttribute[]
+  @@unique([userId, idempotencyKey])
+}
+
+model Document {
+  id           String           @id @default(uuid())
+  userId       String
+  sessionId    String
+  s3Key        String           @unique
+  filename     String
+  mimeType     String
+  sizeBytes    Int
+  pageCount    Int?
+  status       DocumentStatus   @default(UPLOADED)
+  expiresAt    DateTime
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  user         User             @relation(fields: [userId], references: [id])
+  session      ComparisonSession @relation(fields: [sessionId], references: [id])
+  extracted    ExtractedField[]
+  normalized   NormalizedAttribute[]
+}
+
+model ExtractedField {
+  id         String   @id @default(uuid())
+  documentId String
+  name       String
+  value      String
+  source     String
+  createdAt  DateTime @default(now())
+  document   Document @relation(fields: [documentId], references: [id])
+}
+
+model NormalizedAttribute {
+  id          String               @id @default(uuid())
+  sessionId   String
+  documentId  String
+  key         String
+  displayName String
+  value       String
+  createdAt   DateTime             @default(now())
+  session     ComparisonSession    @relation(fields: [sessionId], references: [id])
+  document    Document             @relation(fields: [documentId], references: [id])
+  @@index([sessionId, key])
+}
+
+enum SessionStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum DocumentStatus {
+  UPLOADED
+  EXTRACTED
+  FAILED
+}

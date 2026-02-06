@@ -309,23 +309,12 @@ async function handleExport(params: {
     attributes: attributesFor(docB.id)
   };
 
-  const requestedLens = parseLensParam(request.nextUrl.searchParams.get("lens"));
-  const auto = classifyLens(inputA, inputB);
-
-  if (!requestedLens && auto.confidence < 80) {
-    return NextResponse.json(
-      {
-        error: `Unable to confidently classify decision lens (confidence ${auto.confidence}%). Please select one: hiring, rfp, sales.`,
-        detected: LENS_LABELS[auto.lens],
-        confidence: auto.confidence
-      },
-      { status: 422 }
-    );
-  }
+  // Hardcoded to HIRING lens for MVP
+  const lens: "HIRING" = "HIRING";
 
   try {
     const rawModel = buildExcelModel({
-      lens: requestedLens ?? auto.lens,
+      lens,
       docA: inputA,
       docB: inputB
     });

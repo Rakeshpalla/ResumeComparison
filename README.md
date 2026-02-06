@@ -1,15 +1,16 @@
-# Decision Comparison Engine
+# Resume Comparison Engine
 
-**Consulting-grade comparison tool** for high-stakes business decisions. Compare 2-5 documents (PDF/DOCX) across multiple decision lenses (Hiring, RFP, Sales) and export structured Excel reports with executive scorecards, side-by-side evaluations, improvement plans, and risk analysis.
+**Consulting-grade resume comparison tool** for making better hiring decisions, faster. Compare 2-5 resumes (PDF/DOCX) with structured, opinionated analysis and export decision-ready Excel reports with executive scorecards, side-by-side evaluations, improvement plans, and risk signals.
 
 ## Features
 
-- 🎯 **Multi-Lens Analysis**: Hiring, RFP/Proposal, and Sales decision frameworks
+- 🎯 **Hiring-Focused Analysis**: Role fit, scope/seniority, evidence/metrics, ownership, clarity, and risk signals
 - 📊 **Excel Export**: 4-sheet consulting-grade reports (Executive Scorecard, Side-by-Side, Improvements, Risks)
-- 📄 **Document Support**: PDF and DOCX uploads (up to 5 documents)
+- 📄 **Document Support**: PDF and DOCX resume uploads (up to 5 candidates)
 - 🔐 **Authentication**: Secure user accounts with JWT session management
 - 🧪 **E2E Testing**: Playwright test suite for critical user flows
 - 🎨 **Modern UI**: Clean, intuitive interface with drag-and-drop file uploads
+- 📋 **Job Description Context**: Paste JD to get keyword-aligned fit scores and interview questions
 
 ## Quick Start
 

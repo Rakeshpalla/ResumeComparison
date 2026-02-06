@@ -104,7 +104,7 @@ export default function ComparePage({
   const [data, setData] = useState<ComparisonResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
-  const [lens, setLens] = useState<"auto" | "hiring" | "rfp" | "sales">("auto");
+  const lens = "hiring"; // Hardcoded to hiring lens for MVP
   const [exportError, setExportError] = useState<string | null>(null);
   const [isExporting, setIsExporting] = useState(false);
   const [hiringUi, setHiringUi] = useState<HiringUiResponse | null>(null);
@@ -126,13 +126,7 @@ export default function ComparePage({
     return data.verdict.metrics;
   }, [data]);
 
-  // Auto-pick Hiring lens for resume/CV uploads so users see the decision dashboard by default.
-  useEffect(() => {
-    if (!data) return;
-    if (lens !== "auto") return;
-    if (!looksLikeHiring) return;
-    setLens("hiring");
-  }, [data, lens, looksLikeHiring]);
+  // Always use Hiring lens for MVP (no auto-detection needed).
 
   useEffect(() => {
     if (lens !== "hiring") {
@@ -369,31 +363,14 @@ export default function ComparePage({
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold">Decision dashboard</h1>
+          <h1 className="text-xl font-semibold">Resume comparison</h1>
           <p className="mt-1 text-sm text-slate-600">
             {data?.documents && data.documents.length > 2
-              ? "Ranked shortlist (compares all uploaded documents)."
-              : lens === "hiring"
-                ? "Hiring Decision dashboard (visual + opinionated)."
-                : "Side-by-side comparison (decision-grade)."}
+              ? "Ranked shortlist of all candidates."
+              : "Side-by-side hiring dashboard (visual + opinionated)."}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <select
-            className="rounded border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700"
-            value={lens}
-            onChange={(event) => {
-              setExportError(null);
-              setLens(
-                event.target.value as "auto" | "hiring" | "rfp" | "sales"
-              );
-            }}
-          >
-            <option value="auto">Auto-detect lens</option>
-            <option value="hiring">Hiring decision</option>
-            <option value="rfp">RFP / proposal</option>
-            <option value="sales">Sales / pitch</option>
-          </select>
           <button
             type="button"
             className="rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-70"
@@ -411,15 +388,15 @@ export default function ComparePage({
         </div>
       </div>
 
-      {lens === "hiring" || lens === "rfp" || lens === "sales" ? (
-        <div className="rounded border border-slate-200 bg-white p-4 shadow-sm">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <div className="text-sm font-semibold text-slate-900">Context</div>
-              <div className="mt-1 text-xs text-slate-500">
-                Used for ranking, risks, and interview questions. Set it on Upload; edit here if needed.
-              </div>
+      {/* Job Description Context */}
+      <div className="rounded border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <div className="text-sm font-semibold text-slate-900">Job Description</div>
+            <div className="mt-1 text-xs text-slate-500">
+              Used for ranking candidates, identifying risks, and generating interview questions.
             </div>
+          </div>
             <div className="flex gap-2">
               <button
                 type="button"
@@ -444,7 +421,7 @@ export default function ComparePage({
             <div className="mt-3 text-sm text-slate-700">
               {jobDescription.trim().length > 0
                 ? `${jobDescription.trim().slice(0, 180)}${jobDescription.trim().length > 180 ? "…" : ""}`
-                : "No context provided yet."}
+                : "No job description provided yet."}
             </div>
           ) : (
             <>
@@ -452,7 +429,7 @@ export default function ComparePage({
                 className="mt-3 w-full resize-y rounded border border-slate-300 px-3 py-2 text-sm text-slate-800"
                 rows={5}
                 value={jobDescription}
-                placeholder="Paste JD / requirements / buyer brief here."
+                placeholder="Paste job description here (key requirements, skills, responsibilities)."
                 onChange={(e) => setJobDescription(e.target.value)}
               />
               <div className="mt-2 text-xs text-slate-500">
@@ -463,7 +440,7 @@ export default function ComparePage({
         </div>
       ) : null}
 
-      {lens === "hiring" && hiringUi?.jdContext && hiringUi.jdContext.jdProvided ? (
+      {hiringUi?.jdContext && hiringUi.jdContext.jdProvided ? (
         <div className="rounded border border-slate-200 bg-white p-4 shadow-sm">
           <div className="text-sm font-semibold text-slate-900">
             JD fit snapshot (recruiter view)

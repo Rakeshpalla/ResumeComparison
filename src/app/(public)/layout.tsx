@@ -7,14 +7,14 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           <div>
             <div className="text-lg font-semibold text-slate-900">
-              Decision Comparison Engine
+              Resume Comparison Engine
             </div>
             <div className="mt-0.5 text-xs text-slate-500">
-              Standardize high-stakes business decisions
+              Make better hiring decisions, faster
             </div>
           </div>
           <div className="hidden text-xs text-slate-500 md:block">
-            Decision-grade outputs · Excel-ready
+            Consulting-grade · Excel-ready
           </div>
         </div>
       </header>

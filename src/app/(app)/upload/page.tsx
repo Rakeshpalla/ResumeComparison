@@ -250,9 +250,9 @@ export default function UploadPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-xl font-semibold">Upload documents</h1>
+        <h1 className="text-xl font-semibold">Upload resumes</h1>
         <p className="mt-1 text-sm text-slate-600">
-          Upload 2–5 documents (PDF or DOCX). Then generate a decision dashboard.
+          Upload 2–5 resumes (PDF or DOCX) for side-by-side comparison.
         </p>
       </div>
 
@@ -260,10 +260,10 @@ export default function UploadPage() {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <div className="text-sm font-semibold text-slate-900">
-              Context (paste text)
+              Job Description (Optional)
             </div>
             <div className="mt-1 text-xs text-slate-500">
-              Recommended for paid value. Paste one of: Job Description, RFP requirements, or Sales buyer context.
+              Paste the job description to get keyword-aligned fit scores and interview questions.
             </div>
           </div>
           {contextText.trim().length > 0 ? (
@@ -281,7 +281,7 @@ export default function UploadPage() {
           className="mt-3 w-full resize-y rounded border border-slate-300 px-3 py-2 text-sm text-slate-800"
           rows={5}
           value={contextText}
-          placeholder="Paste JD / requirements / buyer brief here. (This will be used for ranking + risks + interview questions.)"
+          placeholder="Paste job description here (key requirements, skills, responsibilities). This will be used for ranking, risks, and interview questions."
           onChange={(e) => setContextText(e.target.value)}
           disabled={status === "uploading" || status === "processing"}
         />

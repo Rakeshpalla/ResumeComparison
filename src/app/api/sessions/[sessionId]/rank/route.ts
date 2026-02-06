@@ -96,31 +96,18 @@ async function handler(params: {
     attributes: attributesFor(doc.id)
   }));
 
-  const auto = decideLensForMany({
-    requestedLensParam: request.nextUrl.searchParams.get("lens"),
-    docs: inputs
-  });
-
-  if (auto.confidence < 80 && !request.nextUrl.searchParams.get("lens")) {
-    return NextResponse.json(
-      {
-        error: `Unable to confidently classify decision lens (confidence ${auto.confidence}%). Please select one: hiring, rfp, sales.`,
-        detected: auto.lens,
-        confidence: auto.confidence
-      },
-      { status: 422 }
-    );
-  }
+  // Hardcoded to HIRING lens for MVP
+  const lens: "HIRING" = "HIRING";
 
   const ranked = rankDocuments({
-    lens: auto.lens,
+    lens,
     docs: inputs,
     contextText: contextText ?? ""
   });
 
   return NextResponse.json({
     status: session.status,
-    lens: ranked.lens,
+    lens,
     documentCount: docs.length,
     contextUsed: Boolean(ranked.context),
     contextKeywords: ranked.context?.keywords ?? [],

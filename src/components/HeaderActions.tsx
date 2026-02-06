@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 
@@ -23,8 +24,18 @@ export function HeaderActions() {
   // Hide on the auth screen to reduce clutter.
   if (pathname.startsWith("/login")) return null;
 
+  const showHomeButton = !pathname.startsWith("/upload");
+
   return (
     <div className="flex items-center gap-2">
+      {showHomeButton && (
+        <Link
+          href="/upload"
+          className="rounded border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+        >
+          Home
+        </Link>
+      )}
       <button
         type="button"
         className="rounded border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70"

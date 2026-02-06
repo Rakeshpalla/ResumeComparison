@@ -2,8 +2,8 @@ import "./globals.css";
 import type { ReactNode } from "react";
 
 export const metadata = {
-  title: "Decision Comparison Engine",
-  description: "Standardize high-stakes business decisions"
+  title: "Resume Comparison Engine",
+  description: "Make better hiring decisions, faster"
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

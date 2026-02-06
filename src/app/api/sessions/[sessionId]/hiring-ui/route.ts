@@ -140,6 +140,47 @@ function confidenceLabel(scoreDelta: number) {
   return "Low";
 }
 
+type VerdictStrength = "strong" | "moderate" | "weak" | "none";
+
+function verdictStrength(params: { totalA: number; totalB: number; delta: number }): {
+  strength: VerdictStrength;
+  headline: string;
+  subtext: string;
+} {
+  const { totalA, totalB, delta } = params;
+  const topTotal = Math.max(totalA, totalB);
+  const weakThreshold = 14;
+  const adequateThreshold = 18;
+  const strongThreshold = 22;
+
+  if (topTotal < weakThreshold) {
+    return {
+      strength: "none",
+      headline: "Neither candidate shows strong evidence",
+      subtext: "Both resumes lack measurable outcomes and concrete ownership signals. Consider requesting more detailed resumes or expanding your candidate pipeline."
+    };
+  }
+  if (topTotal < adequateThreshold || delta < 2) {
+    return {
+      strength: "weak",
+      headline: "No clear winner between these two",
+      subtext: `Scores are very close (${delta}-point gap). Interview both candidates and use structured questions to differentiate.`
+    };
+  }
+  if (topTotal >= strongThreshold && delta >= 4) {
+    return {
+      strength: "strong",
+      headline: "Clear frontrunner identified",
+      subtext: `The recommended candidate leads by ${delta} points with demonstrably stronger evidence across key dimensions.`
+    };
+  }
+  return {
+    strength: "moderate",
+    headline: "One candidate is relatively stronger",
+    subtext: `There's a ${delta}-point edge, but consider interviewing both. The gap isn't decisive enough to skip the runner-up.`
+  };
+}
+
 const RISK_TYPE_BY_DIMENSION: Record<string, string> = {
   "Role Fit": "Role mismatch",
   "Scope & Seniority": "Scope ambiguity",
@@ -595,7 +636,8 @@ async function buildHiringUiResponse(params: {
       totals: {
         [docA.filename]: totals.a,
         [docB.filename]: totals.b
-      }
+      },
+      verdictStrength: verdictStrength({ totalA: totals.a, totalB: totals.b, delta })
     },
     dimensions: dimensionTable,
     risks: riskRows,

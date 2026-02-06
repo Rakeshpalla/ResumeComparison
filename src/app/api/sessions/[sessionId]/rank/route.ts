@@ -111,6 +111,7 @@ async function handler(params: {
     documentCount: docs.length,
     contextUsed: Boolean(ranked.context),
     contextKeywords: ranked.context?.keywords ?? [],
+    recommendation: ranked.recommendation,
     ranked: ranked.ranked
   });
 }

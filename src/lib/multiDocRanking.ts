@@ -80,10 +80,9 @@ function normalizeForMatch(input: string) {
 
 /**
  * Minimum word count for JD context to be treated as meaningful.
- * Single words like "Test" or very short phrases are too vague
- * to produce reliable keyword-matching scores.
+ * "Test" (1 word) = ignored. "Farming Agriculture Tractors" (3 words) = used.
  */
-const MIN_CONTEXT_WORDS = 5;
+const MIN_CONTEXT_WORDS = 3;
 
 export function isContextMeaningful(contextText: string): boolean {
   const words = contextText.trim().split(/\s+/).filter((w) => w.length >= 2);
@@ -234,12 +233,19 @@ export function assessRecommendation(params: {
   topContextFit: number;
 }): { strength: RecommendationStrength; headline: string; subtext: string } {
   const { topTotal, gap, contextUsed, topContextFit } = params;
-  const maxPossible = 30; // 6 dimensions × 5
 
-  // Thresholds (out of 30)
-  const strongThreshold = 22; // 73%+ average 3.7/5
-  const adequateThreshold = 18; // 60%+ average 3/5
-  const weakThreshold = 14; // below this, nobody is worth recommending
+  const strongThreshold = 22;
+  const adequateThreshold = 18;
+  const weakThreshold = 14;
+
+  // JD provided but NO candidate matches — don't recommend anyone
+  if (contextUsed && topContextFit < 20) {
+    return {
+      strength: "none",
+      headline: "No candidate matches your job description",
+      subtext: `The top resume scores ${topTotal}/30 on structure, but ${topContextFit}% JD fit. These candidates don't appear to align with the role. Consider expanding your pipeline or reposting the role with clearer requirements.`
+    };
+  }
 
   if (topTotal < weakThreshold) {
     return {
@@ -259,7 +265,7 @@ export function assessRecommendation(params: {
 
   if (topTotal >= strongThreshold && gap >= 4) {
     const fitNote = contextUsed && topContextFit < 50
-      ? " However, JD keyword alignment is low — verify role fit in the interview."
+      ? " JD fit is moderate — verify role alignment in the interview."
       : "";
     return {
       strength: "strong",
@@ -268,11 +274,11 @@ export function assessRecommendation(params: {
     };
   }
 
-  // moderate
+  // moderate: one candidate is stronger but not decisive
   return {
     strength: "moderate",
-    headline: "Relatively stronger candidate identified",
-    subtext: `The top candidate has a ${gap}-point edge, but consider interviewing the runner-up as well. ${contextUsed ? "Cross-check with JD fit scores." : "Add a JD for better fit analysis."}`
+    headline: "One candidate is stronger on resume quality",
+    subtext: `The top candidate has a ${gap}-point edge. Consider interviewing both — the gap isn't decisive. ${contextUsed ? "Check JD fit scores above." : "Add a JD for fit analysis."}`
   };
 }
 

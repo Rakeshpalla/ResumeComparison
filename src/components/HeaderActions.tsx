@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 function clearClientState() {
   try {
@@ -20,11 +20,24 @@ function clearClientState() {
 export function HeaderActions() {
   const pathname = usePathname();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
-  // Hide on the auth screen to reduce clutter.
-  if (pathname.startsWith("/login")) return null;
+  // Avoid hydration mismatch by only rendering after mount
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
-  const showHomeButton = !pathname.startsWith("/upload");
+  // Don't render anything until mounted to avoid hydration issues
+  if (!mounted) {
+    return (
+      <div className="flex items-center gap-2">
+        <div className="h-10 w-20" />
+      </div>
+    );
+  }
+
+  const path = pathname ?? "";
+  const showHomeButton = !path.startsWith("/upload");
 
   return (
     <div className="flex items-center gap-2">
@@ -42,10 +55,7 @@ export function HeaderActions() {
         disabled={isLoggingOut}
         onClick={async () => {
           setIsLoggingOut(true);
-          // Client-side state destruction first (no user data should survive).
           clearClientState();
-          // Use a top-level navigation for logout so cookie clearing is handled
-          // reliably by the browser, and applies across tabs.
           window.location.href = "/api/auth/logout";
         }}
       >

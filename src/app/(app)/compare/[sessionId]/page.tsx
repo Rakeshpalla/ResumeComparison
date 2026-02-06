@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
 
 type ComparisonRow = {
   key: string;
@@ -153,8 +154,9 @@ function strengthIcon(strength: string) {
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
-export default function ComparePage({ params }: { params: { sessionId: string } }) {
-  const { sessionId } = params;
+export default function ComparePage() {
+  const params = useParams();
+  const sessionId = (params?.sessionId as string) ?? "";
   const [data, setData] = useState<ComparisonResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
@@ -186,6 +188,7 @@ export default function ComparePage({ params }: { params: { sessionId: string } 
   }, [jobDescription, sessionId]);
 
   useEffect(() => {
+    if (!sessionId) return;
     let active = true;
     let timeout: NodeJS.Timeout;
     async function poll() {
@@ -204,6 +207,7 @@ export default function ComparePage({ params }: { params: { sessionId: string } 
   }, [sessionId, retryCount]);
 
   useEffect(() => {
+    if (!sessionId) return;
     let active = true;
     async function loadHiringUi() {
       if (data?.documents && data.documents.length > 2) { setHiringUi(null); return; }
@@ -223,6 +227,7 @@ export default function ComparePage({ params }: { params: { sessionId: string } 
   }, [sessionId, jobDescription, data?.documents]);
 
   useEffect(() => {
+    if (!sessionId) return;
     let active = true;
     async function loadRank() {
       if (!data?.documents || data.documents.length <= 2) { setRankUi(null); return; }
@@ -237,7 +242,8 @@ export default function ComparePage({ params }: { params: { sessionId: string } 
         if (!active) return;
         const payload = (await response.json()) as RankResponse;
         setRankUi(payload);
-        setSelectedDocIds((prev) => prev.length === 2 ? prev : payload.ranked.slice(0, 2).map((d) => d.id));
+        const ranked = Array.isArray(payload.ranked) ? payload.ranked : [];
+        setSelectedDocIds((prev) => prev.length === 2 ? prev : ranked.slice(0, 2).map((d) => d.id));
       } catch { setRankUi(null); }
     }
     loadRank();
@@ -276,7 +282,7 @@ export default function ComparePage({ params }: { params: { sessionId: string } 
     return lines.length > 1 ? lines : null;
   };
 
-  const hasJd = jobDescription.trim().split(/\s+/).filter((w) => w.length >= 2).length >= 5;
+  const hasJd = jobDescription.trim().split(/\s+/).filter((w) => w.length >= 2).length >= 3;
 
   return (
     <div className="flex flex-col gap-6">
@@ -334,7 +340,7 @@ export default function ComparePage({ params }: { params: { sessionId: string } 
           </div>
         ) : (
           <>
-            <textarea className="mt-3 w-full resize-y rounded border border-slate-300 px-3 py-2 text-sm text-slate-800" rows={5} value={jobDescription} placeholder="Paste the full job description here (requirements, skills, responsibilities). Minimum 5 words." onChange={(e) => setJobDescription(e.target.value)} />
+            <textarea className="mt-3 w-full resize-y rounded border border-slate-300 px-3 py-2 text-sm text-slate-800" rows={5} value={jobDescription} placeholder="Paste the full job description here (requirements, skills, responsibilities). Minimum 3 words." onChange={(e) => setJobDescription(e.target.value)} />
             <div className="mt-2 text-xs text-slate-500">Tip: Paste the actual JD with key requirements. Short/vague text like &quot;Test&quot; will be ignored.</div>
           </>
         )}
@@ -400,7 +406,9 @@ export default function ComparePage({ params }: { params: { sessionId: string } 
         </div>
       )}
 
-      {!data ? (
+      {!sessionId ? (
+        <div className="rounded border border-slate-200 bg-white p-6 text-sm text-slate-600">Invalid session. Please go back to the upload page.</div>
+      ) : !data ? (
         <div className="rounded border border-slate-200 bg-white p-6 text-sm text-slate-600">Loading comparison data...</div>
       ) : (
         <div className="flex flex-col gap-6">
@@ -417,7 +425,7 @@ export default function ComparePage({ params }: { params: { sessionId: string } 
                     <div className="mt-1 text-sm text-slate-700">{rankUi.recommendation.subtext}</div>
                     {rankUi.recommendation.strength !== "none" && (
                       <div className="mt-2 text-sm text-slate-600">
-                        {rankUi.recommendation.strength === "strong" ? `Top candidate: ${rankUi.ranked[0]?.filename}` : `Relatively stronger: ${rankUi.ranked[0]?.filename} (but verify before deciding)`}
+                        {rankUi.recommendation.strength === "strong" ? `Top candidate: ${rankUi.ranked[0]?.filename}` : `Top by structure: ${rankUi.ranked[0]?.filename} — verify JD fit before deciding`}
                       </div>
                     )}
                   </div>

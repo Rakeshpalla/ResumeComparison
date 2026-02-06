@@ -28,6 +28,7 @@ export type RankedDocument = {
     dimension: string;
     score: number;
     evidenceSnippet: string;
+    scoreReason: string;
   }[];
   risks: {
     riskType: string;
@@ -42,108 +43,30 @@ export type RankedDocument = {
 
 const STOPWORDS = new Set(
   [
-    "a",
-    "an",
-    "and",
-    "are",
-    "as",
-    "at",
-    "be",
-    "by",
-    "for",
-    "from",
-    "in",
-    "into",
-    "is",
-    "it",
-    "of",
-    "on",
-    "or",
-    "that",
-    "the",
-    "this",
-    "to",
-    "with",
-    "will",
-    "you",
-    "your",
-    "our",
-    "we",
-    "they",
-    "their",
-    "experience",
-    "skills",
-    "strong",
-    "ability",
-    "must",
-    "nice",
-    "have",
-    "role",
-    "requirements",
-    "responsibilities",
-    "preferred",
-    "plus",
-    "years"
+    "a", "an", "and", "are", "as", "at", "be", "by", "for", "from",
+    "in", "into", "is", "it", "of", "on", "or", "that", "the", "this",
+    "to", "with", "will", "you", "your", "our", "we", "they", "their",
+    "experience", "skills", "strong", "ability", "must", "nice", "have",
+    "role", "requirements", "responsibilities", "preferred", "plus", "years"
   ].map((w) => w.toLowerCase())
 );
 
 const CONTEXT_PHRASES: Record<DecisionLens, string[]> = {
   HIRING: [
-    "product management",
-    "stakeholder management",
-    "roadmap",
-    "go-to-market",
-    "user research",
-    "agile",
-    "scrum",
-    "safe",
-    "kanban",
-    "jira",
-    "confluence",
-    "sql",
-    "analytics",
-    "kpi",
-    "okrs",
-    "a/b",
-    "experimentation",
-    "api",
-    "microservices",
-    "saas",
-    "b2b",
-    "b2c",
-    "pricing",
-    "discovery",
-    "delivery"
+    "product management", "stakeholder management", "roadmap", "go-to-market",
+    "user research", "agile", "scrum", "safe", "kanban", "jira", "confluence",
+    "sql", "analytics", "kpi", "okrs", "a/b", "experimentation", "api",
+    "microservices", "saas", "b2b", "b2c", "pricing", "discovery", "delivery"
   ],
   RFP: [
-    "requirements",
-    "scope",
-    "deliverables",
-    "timeline",
-    "milestones",
-    "implementation",
-    "integration",
-    "security",
-    "compliance",
-    "sla",
-    "pricing",
-    "terms",
-    "assumptions",
-    "dependencies"
+    "requirements", "scope", "deliverables", "timeline", "milestones",
+    "implementation", "integration", "security", "compliance", "sla",
+    "pricing", "terms", "assumptions", "dependencies"
   ],
   SALES: [
-    "problem",
-    "pain",
-    "roi",
-    "value proposition",
-    "differentiation",
-    "case study",
-    "testimonial",
-    "pricing",
-    "next steps",
-    "demo",
-    "trial",
-    "call to action"
+    "problem", "pain", "roi", "value proposition", "differentiation",
+    "case study", "testimonial", "pricing", "next steps", "demo",
+    "trial", "call to action"
   ]
 };
 
@@ -155,11 +78,28 @@ function normalizeForMatch(input: string) {
     .trim();
 }
 
+/**
+ * Minimum word count for JD context to be treated as meaningful.
+ * Single words like "Test" or very short phrases are too vague
+ * to produce reliable keyword-matching scores.
+ */
+const MIN_CONTEXT_WORDS = 5;
+
+export function isContextMeaningful(contextText: string): boolean {
+  const words = contextText.trim().split(/\s+/).filter((w) => w.length >= 2);
+  return words.length >= MIN_CONTEXT_WORDS;
+}
+
 export function extractContextKeywords(params: {
   lens: DecisionLens;
   contextText: string;
 }) {
   const { lens, contextText } = params;
+
+  // If context is too short / vague, return empty keywords
+  // so contextFitPercent falls to 0 instead of a misleading 100%.
+  if (!isContextMeaningful(contextText)) return [];
+
   const normalized = normalizeForMatch(contextText);
   const foundPhrases = CONTEXT_PHRASES[lens].filter((p) => normalized.includes(p));
 
@@ -211,7 +151,6 @@ function riskTypeForDimension(lens: DecisionLens, dimension: string) {
     if (dimension === "Solution Fit") return "Dependency risk";
     return "Over-promising";
   }
-  // SALES
   if (dimension === "Differentiation") return "Weak differentiation";
   if (dimension === "Proof & Credibility") return "Unsupported claims";
   if (dimension === "Narrative Flow") return "Confusing narrative";
@@ -223,6 +162,27 @@ function riskLevelForScore(score: number): "High" | "Medium" | "Low" {
   if (score <= 2) return "High";
   if (score === 3) return "Medium";
   return "Low";
+}
+
+/** Generate a human-readable reason for a dimension score */
+function scoreReason(score: number, dimension: string, evidenceSnippet: string): string {
+  const noProof = evidenceSnippet.toLowerCase().includes("no scoped proof") || evidenceSnippet.toLowerCase().includes("missing");
+
+  if (score === 5) return `Strong: Resume contains measurable outcomes and specific ownership proof for ${dimension.toLowerCase()}.`;
+  if (score === 4) return `Good: Solid evidence found for ${dimension.toLowerCase()}, but could be strengthened with more quantified results.`;
+  if (score === 3) return `Average: Some relevant content found for ${dimension.toLowerCase()}, but lacks hard metrics or concrete ownership signals.`;
+  if (score === 2) return `Weak: Limited evidence for ${dimension.toLowerCase()}. Claims are vague or generic without supporting proof.`;
+  if (noProof) return `Missing: No concrete evidence found for ${dimension.toLowerCase()}. This is a gap that needs to be addressed.`;
+  return `Very weak: Resume lacks meaningful proof for ${dimension.toLowerCase()}. Recruiter cannot validate claims.`;
+}
+
+/** Shorter version for risk bullets */
+function scoreReasonBullet(score: number, evidenceSnippet: string): string {
+  const noProof = evidenceSnippet.toLowerCase().includes("no scoped proof") || evidenceSnippet.toLowerCase().includes("missing");
+  if (score >= 4) return "Evidence is present but could be stronger with quantified outcomes.";
+  if (score === 3) return "Some signals found, but proof is generic \u2014 hard to validate in screening.";
+  if (noProof) return "No concrete evidence found \u2014 this is a red flag for hiring confidence.";
+  return "Claims are vague or unsupported \u2014 needs clarification before shortlisting.";
 }
 
 function makeInterviewQuestions(params: {
@@ -238,7 +198,7 @@ function makeInterviewQuestions(params: {
           ? "Walk me through your highest-impact project. What did you own, what changed, and what measurable result did you deliver?"
           : lens === "RFP"
             ? "Show how you will meet the top requirements and how you will prove acceptance in delivery."
-            : "What is the buyer’s problem, and what proof do you have that your solution improves outcomes?"
+            : "What is the buyer's problem, and what proof do you have that your solution improves outcomes?"
       ],
       proofRequests: [
         lens === "HIRING"
@@ -252,11 +212,11 @@ function makeInterviewQuestions(params: {
   return {
     verifyQuestions: top.map(
       (kw) =>
-        `Tell me about a recent example involving “${kw}”. What was the baseline, what did you change, and what measurable result did you deliver (with timeframe)?`
+        `Tell me about a recent example involving "${kw}". What was the baseline, what did you change, and what measurable result did you deliver (with timeframe)?`
     ),
     proofRequests: top.map(
       (kw) =>
-        `Show an artifact proving “${kw}” (doc, dashboard, plan, slide) and explain your exact ownership.`
+        `Show an artifact proving "${kw}" (doc, dashboard, plan, slide) and explain your exact ownership.`
     )
   };
 }
@@ -301,10 +261,10 @@ export function rankDocuments(params: {
         level,
         bullets: [
           `${d.dimension}: ${d.score}/5.`,
-          `Observed: “${d.evidenceSnippet}”.`,
+          scoreReasonBullet(d.score, d.evidenceSnippet),
           level === "High"
-            ? "High risk: missing or weak evidence in a critical dimension."
-            : "Medium risk: evidence is present but not fully defensible."
+            ? "Action: Ask candidate to provide concrete proof with measurable outcomes."
+            : "Action: Probe for specifics in the interview \u2014 look for numbers and ownership signals."
         ]
       };
     });
@@ -324,7 +284,8 @@ export function rankDocuments(params: {
       dimensions: s.dimensions.map((d) => ({
         dimension: d.dimension,
         score: d.score,
-        evidenceSnippet: d.evidenceSnippet
+        evidenceSnippet: d.evidenceSnippet,
+        scoreReason: scoreReason(d.score, d.dimension, d.evidenceSnippet)
       })),
       risks,
       interviewKit: kit
@@ -355,4 +316,3 @@ export function decideLensForMany(params: {
   const auto = classifyLens(docA, docB);
   return auto;
 }
-

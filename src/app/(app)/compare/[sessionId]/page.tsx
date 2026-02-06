@@ -140,16 +140,38 @@ function contextFitColor(percent: number) {
 
 /** Recommendation banner styling based on strength */
 function strengthBanner(strength: string) {
-  if (strength === "strong") return "border-emerald-300 bg-emerald-50";
-  if (strength === "moderate") return "border-amber-300 bg-amber-50";
-  if (strength === "weak") return "border-orange-300 bg-orange-50";
-  return "border-red-300 bg-red-50"; // none
+  if (strength === "strong") return "border-emerald-400 bg-gradient-to-br from-emerald-50 to-green-50";
+  if (strength === "moderate") return "border-amber-400 bg-gradient-to-br from-amber-50 to-yellow-50";
+  if (strength === "weak") return "border-orange-400 bg-gradient-to-br from-orange-50 to-red-50";
+  return "border-red-400 bg-gradient-to-br from-red-50 to-pink-50"; // none
 }
 function strengthIcon(strength: string) {
-  if (strength === "strong") return "\u2705"; // checkmark
-  if (strength === "moderate") return "\u26A0\uFE0F"; // warning
-  if (strength === "weak") return "\u2753"; // question
-  return "\u274C"; // cross
+  if (strength === "strong") {
+    return (
+      <svg className="h-6 w-6 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    );
+  }
+  if (strength === "moderate") {
+    return (
+      <svg className="h-6 w-6 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+      </svg>
+    );
+  }
+  if (strength === "weak") {
+    return (
+      <svg className="h-6 w-6 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    );
+  }
+  return (
+    <svg className="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+  );
 }
 
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -287,31 +309,64 @@ export default function ComparePage() {
   return (
     <div className="flex flex-col gap-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-semibold">Resume comparison</h1>
-          <p className="mt-1 text-sm text-slate-600">
-            {data?.documents && data.documents.length > 2 ? "All uploaded candidates ranked." : "Side-by-side candidate analysis."}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="animate-fade-in">
+          <h1 className="text-2xl font-bold text-slate-900 sm:text-3xl">Resume Comparison</h1>
+          <p className="mt-2 text-sm text-slate-600 sm:text-base">
+            {data?.documents && data.documents.length > 2 ? "🎯 All uploaded candidates ranked and analyzed" : "⚖️ Side-by-side candidate comparison"}
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <button type="button" className="rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-70" onClick={handleExportExcel} disabled={isExporting}>
-            {isExporting ? "Exporting..." : "Export decision Excel"}
+        <div className="flex flex-wrap gap-2 sm:gap-3">
+          <button 
+            type="button" 
+            className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-indigo-500/30 transition-all hover:shadow-xl hover:shadow-indigo-500/40 disabled:cursor-not-allowed disabled:opacity-60" 
+            onClick={handleExportExcel} 
+            disabled={isExporting}
+          >
+            {isExporting ? (
+              <>
+                <svg className="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span>Exporting...</span>
+              </>
+            ) : (
+              <>
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <span>Export Excel</span>
+              </>
+            )}
           </button>
-          <a className="rounded border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50" href={`/api/sessions/${sessionId}/export`}>Export raw CSV</a>
+          <a 
+            className="flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition-all hover:bg-slate-50 hover:shadow-md" 
+            href={`/api/sessions/${sessionId}/export`}
+          >
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <span className="hidden sm:inline">Export CSV</span>
+            <span className="sm:hidden">CSV</span>
+          </a>
         </div>
       </div>
 
       {/* No-JD Warning */}
       {!hasJd && (
-        <div className="rounded-lg border-2 border-blue-200 bg-blue-50 px-5 py-4">
-          <div className="flex items-start gap-3">
-            <span className="text-xl">&#x1F4CB;</span>
-            <div>
-              <div className="text-sm font-semibold text-blue-900">No job description provided</div>
+        <div className="animate-fade-in rounded-xl border-2 border-blue-300 bg-gradient-to-br from-blue-50 to-indigo-50 p-5 shadow-soft">
+          <div className="flex items-start gap-4">
+            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-blue-100">
+              <svg className="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div className="flex-1">
+              <div className="font-bold text-blue-900">No job description provided</div>
               <div className="mt-1 text-sm text-blue-800">
-                Results below compare <strong>resume quality only</strong> (structure, metrics, ownership signals) — not job fit.
-                For meaningful recommendations, paste the actual job description below.
+                Results compare <strong>resume quality only</strong> (structure, metrics, ownership) — not job fit.
+                Add a job description below for better insights.
               </div>
             </div>
           </div>
@@ -319,30 +374,74 @@ export default function ComparePage() {
       )}
 
       {/* Job Description Context */}
-      <div className="rounded border border-slate-200 bg-white p-4 shadow-sm">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <div className="text-sm font-semibold text-slate-900">Job Description</div>
-            <div className="mt-1 text-xs text-slate-500">Paste a real JD (5+ words) for keyword-aligned fit scores and targeted interview questions.</div>
+      <div className="animate-fade-in overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-soft">
+        <div className="flex flex-wrap items-center justify-between gap-3 bg-gradient-to-r from-slate-50 to-slate-100 px-5 py-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-100">
+              <svg className="h-5 w-5 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+            </div>
+            <div>
+              <div className="text-sm font-bold text-slate-900">Job Description</div>
+              <div className="mt-0.5 text-xs text-slate-600">
+                {jobDescription.trim().length > 0 
+                  ? `${jobDescription.trim().length} characters • Click Edit to modify` 
+                  : "Add for keyword-aligned fit scores"}
+              </div>
+            </div>
           </div>
           <div className="flex gap-2">
-            <button type="button" className="rounded border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-50" onClick={() => setIsEditingContext((v) => !v)}>
-              {isEditingContext ? "Hide editor" : "Edit JD"}
+            <button 
+              type="button" 
+              className="flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-50" 
+              onClick={() => setIsEditingContext((v) => !v)}
+            >
+              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+              </svg>
+              {isEditingContext ? "Done" : "Edit"}
             </button>
             {jobDescription.trim().length > 0 && (
-              <button type="button" className="rounded border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-50" onClick={() => setJobDescription("")}>Clear</button>
+              <button 
+                type="button" 
+                className="flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition-colors hover:bg-red-50 hover:border-red-300 hover:text-red-700" 
+                onClick={() => setJobDescription("")}
+              >
+                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                Clear
+              </button>
             )}
           </div>
         </div>
         {!isEditingContext ? (
-          <div className="mt-3 text-sm text-slate-700">
-            {jobDescription.trim().length > 0 ? `${jobDescription.trim().slice(0, 180)}${jobDescription.trim().length > 180 ? "\u2026" : ""}` : "No job description provided yet."}
+          <div className="px-5 py-4">
+            <p className="text-sm text-slate-700">
+              {jobDescription.trim().length > 0 ? (
+                <span>{jobDescription.trim().slice(0, 280)}{jobDescription.trim().length > 280 ? "..." : ""}</span>
+              ) : (
+                <span className="italic text-slate-500">No job description provided yet. Click Edit to add one.</span>
+              )}
+            </p>
           </div>
         ) : (
-          <>
-            <textarea className="mt-3 w-full resize-y rounded border border-slate-300 px-3 py-2 text-sm text-slate-800" rows={5} value={jobDescription} placeholder="Paste the full job description here (requirements, skills, responsibilities). Minimum 3 words." onChange={(e) => setJobDescription(e.target.value)} />
-            <div className="mt-2 text-xs text-slate-500">Tip: Paste the actual JD with key requirements. Short/vague text like &quot;Test&quot; will be ignored.</div>
-          </>
+          <div className="border-t border-slate-200 bg-slate-50 px-5 py-4">
+            <textarea 
+              className="w-full resize-y rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 transition-all placeholder:text-slate-400 hover:border-indigo-300 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10" 
+              rows={6} 
+              value={jobDescription} 
+              placeholder="Paste the full job description here (requirements, skills, responsibilities). Minimum 3 words for analysis." 
+              onChange={(e) => setJobDescription(e.target.value)} 
+            />
+            <div className="mt-3 flex items-start gap-2 text-xs text-slate-600">
+              <svg className="mt-0.5 h-4 w-4 flex-shrink-0 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span>The more detailed your JD, the better the keyword matching and interview questions will be.</span>
+            </div>
+          </div>
         )}
       </div>
 
@@ -415,75 +514,124 @@ export default function ComparePage() {
 
           {/* ─── Multi-doc ranking (3+ resumes) ─── */}
           {rankUi && data.documents.length > 2 ? (
-            <div className="rounded border border-slate-200 bg-white p-6 shadow-sm">
-              {/* Honest recommendation banner */}
-              <div className={`rounded-lg border-2 p-4 mb-5 ${strengthBanner(rankUi.recommendation.strength)}`}>
-                <div className="flex items-start gap-3">
-                  <span className="text-2xl">{strengthIcon(rankUi.recommendation.strength)}</span>
-                  <div>
-                    <div className="text-base font-semibold text-slate-900">{rankUi.recommendation.headline}</div>
-                    <div className="mt-1 text-sm text-slate-700">{rankUi.recommendation.subtext}</div>
-                    {rankUi.recommendation.strength !== "none" && (
-                      <div className="mt-2 text-sm text-slate-600">
-                        {rankUi.recommendation.strength === "strong" ? `Top candidate: ${rankUi.ranked[0]?.filename}` : `Top by structure: ${rankUi.ranked[0]?.filename} — verify JD fit before deciding`}
+            <div className="animate-fade-in rounded-2xl border border-slate-200 bg-white p-6 shadow-soft">
+              {/* Recommendation Banner */}
+              <div className={`rounded-xl border-2 p-5 mb-6 shadow-soft ${strengthBanner(rankUi.recommendation.strength)}`}>
+                <div className="flex items-start gap-4">
+                  <div className="flex-shrink-0">{strengthIcon(rankUi.recommendation.strength)}</div>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-bold text-slate-900">{rankUi.recommendation.headline}</h3>
+                    <p className="mt-2 text-sm text-slate-700 leading-relaxed">{rankUi.recommendation.subtext}</p>
+                    {rankUi.recommendation.strength !== "none" && rankUi.ranked[0] && (
+                      <div className="mt-4 flex items-center gap-2 rounded-lg bg-white/60 px-3 py-2 backdrop-blur-sm">
+                        <svg className="h-4 w-4 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                        <span className="text-sm font-medium text-slate-700">
+                          {rankUi.recommendation.strength === "strong" ? "Top candidate: " : "Leading by structure: "}
+                          <span className="font-bold text-slate-900">{rankUi.ranked[0].filename}</span>
+                        </span>
                       </div>
                     )}
                   </div>
                 </div>
               </div>
 
-              <div className="flex flex-wrap items-start justify-between gap-4">
-                <div>
-                  <div className="text-sm text-slate-700">
-                    {rankUi.documentCount} resumes compared{" "}
-                    {rankUi.contextUsed ? `\u00b7 JD keywords: ${rankUi.contextKeywords.slice(0, 5).join(", ")}` : "\u00b7 Resume quality comparison only (no JD)"}
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-100">
+                    <span className="text-lg">📊</span>
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-slate-900">
+                      {rankUi.documentCount} Candidates Analyzed
+                    </p>
+                    <p className="text-xs text-slate-600">
+                      {rankUi.contextUsed ? `JD Keywords: ${rankUi.contextKeywords.slice(0, 4).join(", ")}${rankUi.contextKeywords.length > 4 ? "..." : ""}` : "Resume quality comparison (no JD provided)"}
+                    </p>
                   </div>
                 </div>
-                <div className="rounded border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
-                  Select <span className="font-semibold">2</span> candidates for the Excel decision file.
+                <div className="flex items-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm">
+                  <svg className="h-4 w-4 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                  </svg>
+                  <span className="font-semibold text-indigo-900">
+                    Select <span className="text-indigo-600">2</span> for Excel export
+                  </span>
                 </div>
               </div>
 
-              <div className="mt-5 overflow-x-auto rounded border border-slate-200">
+              <div className="mt-6 overflow-x-auto rounded-xl border border-slate-200 shadow-sm">
                 <table className="w-full border-collapse text-left text-sm">
-                  <thead className="bg-slate-50">
+                  <thead className="bg-gradient-to-r from-slate-50 to-slate-100">
                     <tr className="border-b border-slate-200">
-                      <th className="px-4 py-3 font-semibold text-slate-700">Select</th>
-                      <th className="px-4 py-3 font-semibold text-slate-700">Rank</th>
-                      <th className="px-4 py-3 font-semibold text-slate-700">Candidate</th>
-                      <th className="px-4 py-3 font-semibold text-slate-700">Total</th>
-                      {rankUi.contextUsed && <th className="px-4 py-3 font-semibold text-slate-700">JD Fit</th>}
-                      <th className="px-4 py-3 font-semibold text-slate-700">Dimension scores</th>
-                      <th className="px-4 py-3 font-semibold text-slate-700">Risks + interview</th>
+                      <th className="px-4 py-3 font-bold text-slate-700">Select</th>
+                      <th className="px-4 py-3 font-bold text-slate-700">Rank</th>
+                      <th className="px-4 py-3 font-bold text-slate-700">Candidate</th>
+                      <th className="px-4 py-3 font-bold text-slate-700">Total</th>
+                      {rankUi.contextUsed && <th className="px-4 py-3 font-bold text-slate-700">JD Fit</th>}
+                      <th className="px-4 py-3 font-bold text-slate-700">Dimensions</th>
+                      <th className="px-4 py-3 font-bold text-slate-700">Risks & Interview</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {rankUi.ranked.map((doc) => (
-                      <tr key={doc.id} className="border-b border-slate-100 align-top">
-                        <td className="px-4 py-3">
-                          <input type="checkbox" checked={selectedDocIds.includes(doc.id)} onChange={() => setSelectedDocIds((prev) => {
-                            if (prev.includes(doc.id)) return prev.filter((id) => id !== doc.id);
-                            if (prev.length >= 2) return [prev[1], doc.id];
-                            return [...prev, doc.id];
-                          })} />
+                    {rankUi.ranked.map((doc, idx) => (
+                      <tr key={doc.id} className={`border-b border-slate-100 align-top transition-colors hover:bg-slate-50 ${idx === 0 ? 'bg-indigo-50/30' : ''}`}>
+                        <td className="px-4 py-4">
+                          <input 
+                            type="checkbox" 
+                            checked={selectedDocIds.includes(doc.id)} 
+                            onChange={() => setSelectedDocIds((prev) => {
+                              if (prev.includes(doc.id)) return prev.filter((id) => id !== doc.id);
+                              if (prev.length >= 2) return [prev[1], doc.id];
+                              return [...prev, doc.id];
+                            })} 
+                            className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-0"
+                          />
                         </td>
-                        <td className="px-4 py-3">
-                          <span className={`inline-flex h-8 w-8 items-center justify-center rounded-full font-semibold text-white ${doc.rank === 1 ? "bg-emerald-600" : doc.rank === 2 ? "bg-teal-500" : "bg-slate-400"}`}>#{doc.rank}</span>
-                        </td>
-                        <td className="px-4 py-3 text-slate-700">
-                          <div className="font-semibold">{doc.filename}</div>
-                          <div className="mt-1 flex gap-2 text-xs">
-                            <span className={`rounded px-1.5 py-0.5 font-medium ${scoreTextColor(doc.clarity)}`}>Clarity {doc.clarity}/5</span>
-                            <span className={`rounded px-1.5 py-0.5 font-medium ${scoreTextColor(doc.riskHygiene)}`}>Risk hygiene {doc.riskHygiene}/5</span>
+                        <td className="px-4 py-4">
+                          <div className={`inline-flex h-10 w-10 items-center justify-center rounded-xl font-bold text-white shadow-sm ${doc.rank === 1 ? "bg-gradient-to-br from-emerald-500 to-green-600" : doc.rank === 2 ? "bg-gradient-to-br from-teal-500 to-cyan-600" : "bg-gradient-to-br from-slate-400 to-slate-500"}`}>
+                            #{doc.rank}
                           </div>
                         </td>
-                        <td className="px-4 py-3">
-                          <span className="text-lg font-bold text-slate-900">{doc.total}</span><span className="text-xs text-slate-500"> / 30</span>
+                        <td className="px-4 py-4">
+                          <div className="font-bold text-slate-900">{doc.filename}</div>
+                          <div className="mt-2 flex flex-wrap gap-2 text-xs">
+                            <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 font-semibold ${scoreTextColor(doc.clarity)}`}>
+                              <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                              Clarity {doc.clarity}/5
+                            </span>
+                            <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 font-semibold ${scoreTextColor(doc.riskHygiene)}`}>
+                              <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                              Hygiene {doc.riskHygiene}/5
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-4">
+                          <div className="flex flex-col items-center">
+                            <span className="text-2xl font-bold text-slate-900">{doc.total}</span>
+                            <span className="text-xs font-medium text-slate-500">out of 30</span>
+                          </div>
                         </td>
                         {rankUi.contextUsed && (
-                          <td className="px-4 py-3">
-                            <div className={`text-lg font-semibold ${contextFitColor(doc.contextFitPercent)}`}>{doc.contextFitPercent}%</div>
-                            {doc.missingKeywords.length > 0 && <div className="mt-1 text-xs text-red-600">Gaps: {doc.missingKeywords.slice(0, 3).join(", ")}</div>}
+                          <td className="px-4 py-4">
+                            <div className="flex flex-col items-center">
+                              <div className={`text-2xl font-bold ${contextFitColor(doc.contextFitPercent)}`}>{doc.contextFitPercent}%</div>
+                              {doc.matchedKeywords.length > 0 && (
+                                <div className="mt-2 text-xs text-slate-600">
+                                  ✓ {doc.matchedKeywords.slice(0, 2).join(", ")}
+                                </div>
+                              )}
+                              {doc.missingKeywords.length > 0 && (
+                                <div className="mt-1 text-xs text-red-600">
+                                  ✗ {doc.missingKeywords.slice(0, 2).join(", ")}
+                                </div>
+                              )}
+                            </div>
                           </td>
                         )}
                         <td className="px-4 py-3">

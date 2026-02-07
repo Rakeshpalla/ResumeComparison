@@ -6,11 +6,15 @@ import {
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 const REGION = process.env.AWS_REGION || "us-east-1";
-const BUCKET = process.env.S3_BUCKET;
 const ENDPOINT = process.env.S3_ENDPOINT;
 
-if (!BUCKET) {
-  throw new Error("S3_BUCKET is not configured.");
+/** Lazy init to avoid throwing at build time when env vars are not set. */
+function getBucket(): string {
+  const bucket = process.env.S3_BUCKET;
+  if (!bucket) {
+    throw new Error("S3_BUCKET is not configured.");
+  }
+  return bucket;
 }
 
 const s3Client = new S3Client({
@@ -30,7 +34,7 @@ export async function createSignedUploadUrl(
   contentType: string
 ) {
   const command = new PutObjectCommand({
-    Bucket: BUCKET,
+    Bucket: getBucket(),
     Key: key,
     ContentType: contentType
   });
@@ -39,7 +43,7 @@ export async function createSignedUploadUrl(
 
 export async function fetchObjectBuffer(key: string) {
   const command = new GetObjectCommand({
-    Bucket: BUCKET,
+    Bucket: getBucket(),
     Key: key
   });
   const response = await s3Client.send(command);

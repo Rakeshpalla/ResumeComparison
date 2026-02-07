@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { Footer } from "../../components/Footer";
 
 export default function PublicLayout({ children }: { children: ReactNode }) {
   return (
@@ -25,7 +26,8 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
           </div>
         </div>
       </header>
-      <main className="mx-auto min-h-[calc(100vh-73px)] max-w-7xl px-4 py-8 sm:px-6 lg:px-8">{children}</main>
+      <main className="mx-auto flex min-h-[calc(100vh-73px)] max-w-7xl flex-col px-4 py-8 sm:px-6 lg:px-8">{children}</main>
+      <Footer />
     </>
   );
 }

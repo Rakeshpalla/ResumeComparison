@@ -20,7 +20,7 @@ export default function UploadPage() {
   const [currentUploadName, setCurrentUploadName] = useState<string | null>(null);
   const [contextText, setContextText] = useState<string>("");
   const [isDragging, setIsDragging] = useState(false);
-  const [showJdInput, setShowJdInput] = useState(false);
+  const [showJdInput, setShowJdInput] = useState(true);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const allowedTypes = new Set([

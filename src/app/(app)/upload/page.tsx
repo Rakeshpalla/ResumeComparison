@@ -128,75 +128,33 @@ export default function UploadPage() {
         }
       }
 
-      // PERFORMANCE OPTIMIZATION: Upload files in parallel instead of sequentially
+      // Server-side proxy upload (avoids CORS with MinIO; more reliable)
       const uploadPromises = selectedFiles.map(async (file) => {
         try {
-          // Step 1: Get signed URL
-          const signResponse = await fetch(
-            `/api/sessions/${currentSessionId}/documents/sign-upload`,
+          const formData = new FormData();
+          formData.append("file", file);
+
+          const uploadResponse = await fetch(
+            `/api/sessions/${currentSessionId}/documents/upload`,
             {
               method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                filename: file.name,
-                contentType: file.type,
-                sizeBytes: file.size
-              })
+              credentials: "include",
+              body: formData
             }
           );
 
-          if (signResponse.status === 401) {
+          if (uploadResponse.status === 401) {
             window.location.href = "/login";
             throw new Error("Unauthorized");
           }
-          if (!signResponse.ok) {
-            const body = await signResponse.json();
-            throw new Error(body.error || "Failed to sign upload.");
-          }
-
-          const signData = await signResponse.json();
-
-          // Step 2: Upload to S3
-          const uploadResponse = await fetch(signData.uploadUrl, {
-            method: "PUT",
-            headers: { "Content-Type": file.type },
-            body: file
-          });
-
           if (!uploadResponse.ok) {
-            throw new Error(`S3 upload failed for ${file.name}`);
+            const body = await uploadResponse.json();
+            throw new Error(body.error || `Upload failed for ${file.name}.`);
           }
 
-          // Step 3: Complete upload
-          const completeResponse = await fetch(
-            `/api/sessions/${currentSessionId}/documents/complete`,
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                s3Key: signData.s3Key,
-                filename: file.name,
-                mimeType: file.type,
-                sizeBytes: file.size
-              })
-            }
-          );
-
-          if (completeResponse.status === 401) {
-            window.location.href = "/login";
-            throw new Error("Unauthorized");
-          }
-          if (!completeResponse.ok) {
-            const body = await completeResponse.json();
-            throw new Error(body.error || "Failed to finalize upload.");
-          }
-
-          const completeData = await completeResponse.json();
-          
-          // Update state immediately for this file
-          setUploadedDocs(prev => [...prev, { id: completeData.documentId, filename: file.name }]);
-          
-          return { id: completeData.documentId, filename: file.name };
+          const data = await uploadResponse.json();
+          setUploadedDocs(prev => [...prev, { id: data.documentId, filename: file.name }]);
+          return { id: data.documentId, filename: file.name };
         } catch (err) {
           console.error(`Upload failed for ${file.name}:`, err);
           throw err;
@@ -211,7 +169,19 @@ export default function UploadPage() {
       setStatus("idle");
       return true;
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unexpected error.");
+      const msg = err instanceof Error ? err.message : "Unexpected error.";
+      const isNetwork =
+        msg === "Failed to fetch" ||
+        msg.includes("network") ||
+        msg.includes("abort") ||
+        msg.includes("Load failed") ||
+        msg.includes("ECONNRESET") ||
+        msg.includes("connection");
+      setError(
+        isNetwork
+          ? "Upload failed (connection reset or network error). Ensure Docker is running and MinIO is up (run in project folder: docker compose up -d). Try again or use fewer/smaller files."
+          : msg
+      );
       setStatus("error");
       return false;
     }

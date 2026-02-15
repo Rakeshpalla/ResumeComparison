@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 type FormState = "login" | "register";
 
@@ -8,6 +8,16 @@ export default function LoginPage() {
   const [mode, setMode] = useState<FormState>("login");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [dbUnavailable, setDbUnavailable] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch("/api/health")
+      .then((r) => r.json())
+      .then((data) => {
+        if (!data.ok) setDbUnavailable(data.error || "Database unavailable.");
+      })
+      .catch(() => setDbUnavailable("Could not reach server."));
+  }, []);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -42,7 +52,16 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-[calc(100vh-200px)] items-center justify-center">
+    <div className="flex min-h-[calc(100vh-200px)] flex-col items-center justify-center">
+      {dbUnavailable && (
+        <div className="mb-6 w-full max-w-md animate-fade-in rounded-xl border-2 border-amber-200 bg-amber-50 p-4 text-center">
+          <p className="text-sm font-semibold text-amber-900">Database not available</p>
+          <p className="mt-1 text-xs text-amber-800">{dbUnavailable}</p>
+          <p className="mt-2 text-xs text-amber-700">
+            In the project folder run: <code className="rounded bg-amber-100 px-1.5 py-0.5 font-mono">docker compose up -d</code>
+          </p>
+        </div>
+      )}
       <div className="w-full max-w-md animate-fade-in">
         {/* Hero Section */}
         <div className="mb-8 text-center">

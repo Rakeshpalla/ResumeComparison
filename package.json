@@ -7,7 +7,7 @@
     "kill:3100": "node scripts/kill-port.mjs 3100",
     "clean:next": "node scripts/clean-next-cache.mjs",
     "predev": "npm run clean:next",
-    "dev": "next dev",
+    "dev": "node scripts/wait-for-db.mjs && next dev",
     "dev:clean": "npm run clean:next && next dev",
     "preview": "npm run kill:3000 && npm run clean:next && next build && next start",
     "portal": "npm run preview",

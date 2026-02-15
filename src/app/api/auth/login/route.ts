@@ -5,6 +5,14 @@ import { attachSessionCookie, createSessionToken } from "../../../../lib/auth";
 
 export const runtime = "nodejs";
 
+const DB_UNREACHABLE_MSG =
+  "Database is not available. Start it with: docker compose up -d (and ensure Docker Desktop is running).";
+
+function isDbConnectionError(error: unknown): boolean {
+  const msg = error instanceof Error ? error.message : String(error);
+  return /Can't reach database server|connection refused|ECONNREFUSED|getaddrinfo/i.test(msg);
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -15,6 +23,9 @@ export async function POST(request: Request) {
     attachSessionCookie(response, token, request);
     return response;
   } catch (error) {
+    if (isDbConnectionError(error)) {
+      return NextResponse.json({ error: DB_UNREACHABLE_MSG }, { status: 503 });
+    }
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Login failed." },
       { status: 401 }

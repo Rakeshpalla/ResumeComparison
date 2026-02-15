@@ -5,6 +5,8 @@ import {
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
+const MAX_PROXY_UPLOAD_BYTES = 50 * 1024 * 1024; // 50MB
+
 const REGION = process.env.AWS_REGION || "us-east-1";
 const ENDPOINT = process.env.S3_ENDPOINT;
 
@@ -52,4 +54,49 @@ export async function fetchObjectBuffer(key: string) {
   }
   const bytes = await response.Body.transformToByteArray();
   return Buffer.from(bytes);
+}
+
+function isRetryableNetworkError(err: unknown): boolean {
+  const code = err && typeof err === "object" && "code" in err ? (err as { code: string }).code : "";
+  const message = err instanceof Error ? err.message : String(err);
+  return (
+    code === "ECONNRESET" ||
+    code === "ETIMEDOUT" ||
+    code === "ECONNREFUSED" ||
+    message.includes("ECONNRESET") ||
+    message.includes("socket hang up")
+  );
+}
+
+/** Upload a buffer to S3/MinIO (used by server-side proxy upload to avoid CORS). Retries once on connection errors. */
+export async function putObjectBuffer(
+  key: string,
+  body: Buffer,
+  contentType: string
+) {
+  const command = new PutObjectCommand({
+    Bucket: getBucket(),
+    Key: key,
+    Body: body,
+    ContentType: contentType
+  });
+  let lastErr: unknown;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      await s3Client.send(command);
+      return;
+    } catch (err) {
+      lastErr = err;
+      if (attempt === 0 && isRetryableNetworkError(err)) {
+        await new Promise((r) => setTimeout(r, 500));
+        continue;
+      }
+      throw err;
+    }
+  }
+  throw lastErr;
+}
+
+export function getMaxProxyUploadBytes() {
+  return MAX_PROXY_UPLOAD_BYTES;
 }

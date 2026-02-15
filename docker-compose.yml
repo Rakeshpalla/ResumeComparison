@@ -36,6 +36,7 @@ services:
       /bin/sh -c "
       /usr/bin/mc alias set local http://minio:9000 minioadmin minioadmin &&
       /usr/bin/mc mb --ignore-existing local/specsheet-compare &&
+      (echo '{\"CORSRules\":[{\"AllowedOrigins\":[\"*\"],\"AllowedMethods\":[\"GET\",\"PUT\",\"POST\",\"DELETE\",\"HEAD\"],\"AllowedHeaders\":[\"*\"]}]}' > /tmp/cors.json && /usr/bin/mc cors set-json local/specsheet-compare /tmp/cors.json 2>/dev/null || true) &&
       exit 0;
       "
 

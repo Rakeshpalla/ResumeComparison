@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUserFromRequest } from "../../../../../lib/auth";
 import { prisma } from "../../../../../lib/db";
+import { sanitizePlainText } from "../../../../../lib/sanitize";
 import { decideLensForMany, rankDocuments } from "../../../../../lib/multiDocRanking";
 import type { StrictDocumentInput } from "../../../../../lib/strictDecisionComparison";
 
@@ -130,7 +131,8 @@ export async function POST(
   const body = (await request.json().catch(() => null)) as
     | { contextText?: unknown }
     | null;
-  const contextText = typeof body?.contextText === "string" ? body.contextText : "";
+  const raw = typeof body?.contextText === "string" ? body.contextText : "";
+  const contextText = sanitizePlainText(raw, 50000);
   return handler({ request, sessionId: params.sessionId, contextText });
 }
 

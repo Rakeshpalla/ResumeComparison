@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUserFromRequest } from "../../../../../lib/auth";
 import { prisma } from "../../../../../lib/db";
+import { sanitizePlainText } from "../../../../../lib/sanitize";
 import {
   buildExcelModel,
   parseLensParam,
@@ -657,7 +658,8 @@ export async function POST(
   { params }: { params: { sessionId: string } }
 ) {
   const body = (await request.json().catch(() => null)) as { jdText?: unknown } | null;
-  const jdText = typeof body?.jdText === "string" ? body.jdText : "";
+  const rawJd = typeof body?.jdText === "string" ? body.jdText : "";
+  const jdText = sanitizePlainText(rawJd, 50000);
   return buildHiringUiResponse({ request, sessionId: params.sessionId, jdText });
 }
 

@@ -10,6 +10,9 @@ if (!process.env.DATABASE_URL) {
   process.env.DATABASE_URL =
     "postgresql://placeholder:placeholder@localhost:5432/placeholder";
 }
+if (!process.env.DIRECT_DATABASE_URL) {
+  process.env.DIRECT_DATABASE_URL = process.env.DATABASE_URL;
+}
 
 execSync("prisma generate", { stdio: "inherit" });
 execSync("next build", { stdio: "inherit" });

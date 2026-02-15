@@ -2,8 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { randomUUID, createHash } from "crypto";
 import { getUserFromRequest } from "../../../../../../lib/auth";
 import { prisma } from "../../../../../../lib/db";
-import { putObjectBuffer, getMaxProxyUploadBytes } from "../../../../../../services/storage";
+import { putObjectBuffer } from "../../../../../../services/storage";
 import { upsertDocumentMetadata } from "../../../../../../services/documentService";
+import { checkRateLimit, checkUploadBytesQuota, recordUploadBytes } from "../../../../../../lib/rate-limit";
+import {
+  validateFileBuffer,
+  getMaxUploadSizeBytes
+} from "../../../../../../lib/file-validation";
 
 export const runtime = "nodejs";
 
@@ -28,6 +33,8 @@ export async function POST(
   request: NextRequest,
   { params }: { params: { sessionId: string } }
 ) {
+  const rateLimitRes = checkRateLimit(request, "upload");
+  if (rateLimitRes) return rateLimitRes;
   const user = await getUserFromRequest(request);
   if (!user) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
@@ -73,11 +80,20 @@ export async function POST(
     }
 
     const sizeBytes = file.size;
-    if (sizeBytes > getMaxProxyUploadBytes()) {
+    const quotaRes = checkUploadBytesQuota(user.id, sizeBytes);
+    if (quotaRes) return quotaRes;
+    const maxBytes = getMaxUploadSizeBytes();
+    if (sizeBytes > maxBytes) {
       return NextResponse.json(
-        { error: `File too large. Maximum size is ${Math.round(getMaxProxyUploadBytes() / 1024 / 1024)}MB.` },
+        { error: `File too large. Maximum size is ${Math.round(maxBytes / 1024 / 1024)}MB (set MAX_FILE_SIZE_MB / MAX_UPLOAD_SIZE_MB in env).` },
         { status: 400 }
       );
+    }
+
+    const buffer = Buffer.from(await file.arrayBuffer());
+    const validation = validateFileBuffer(buffer, file.type, sizeBytes);
+    if (!validation.ok) {
+      return NextResponse.json({ error: validation.error }, { status: 400 });
     }
 
     const hash = createHash("sha256")
@@ -86,8 +102,8 @@ export async function POST(
       .slice(0, 16);
     const s3Key = `sessions/${session.id}/${hash}-${randomUUID()}.${ext}`;
 
-    const buffer = Buffer.from(await file.arrayBuffer());
     await putObjectBuffer(s3Key, buffer, file.type);
+    recordUploadBytes(user.id, sizeBytes);
 
     const document = await upsertDocumentMetadata({
       userId: user.id,

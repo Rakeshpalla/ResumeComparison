@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getUserFromRequest } from "../../../../../lib/auth";
 import { prisma } from "../../../../../lib/db";
 import { enqueueSessionExtraction } from "../../../../../services/extractionService";
+import { checkRateLimit } from "../../../../../lib/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -9,6 +10,8 @@ export async function POST(
   request: NextRequest,
   { params }: { params: { sessionId: string } }
 ) {
+  const rateLimitRes = checkRateLimit(request, "process");
+  if (rateLimitRes) return rateLimitRes;
   const user = await getUserFromRequest(request);
   if (!user) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });

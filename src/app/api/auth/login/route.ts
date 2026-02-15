@@ -1,7 +1,8 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { authSchema } from "../../../../lib/validation";
 import { authenticateUser } from "../../../../services/userService";
 import { attachSessionCookie, createSessionToken } from "../../../../lib/auth";
+import { checkRateLimit } from "../../../../lib/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -13,7 +14,9 @@ function isDbConnectionError(error: unknown): boolean {
   return /Can't reach database server|connection refused|ECONNREFUSED|getaddrinfo/i.test(msg);
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  const rateLimitRes = checkRateLimit(request, "auth");
+  if (rateLimitRes) return rateLimitRes;
   try {
     const body = await request.json();
     const payload = authSchema.parse(body);

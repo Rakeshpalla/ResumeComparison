@@ -3,8 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_DATABASE_URL")
 }
 
 model User {
@@ -16,6 +17,7 @@ model User {
   updatedAt    DateTime            @updatedAt
   sessions     ComparisonSession[]
   documents    Document[]
+  @@index([email])
 }
 
 model ComparisonSession {
@@ -30,6 +32,9 @@ model ComparisonSession {
   documents   Document[]
   normalized  NormalizedAttribute[]
   @@unique([userId, idempotencyKey])
+  @@index([userId])
+  @@index([userId, status])
+  @@index([createdAt])
 }
 
 model Document {
@@ -49,6 +54,8 @@ model Document {
   session      ComparisonSession @relation(fields: [sessionId], references: [id])
   extracted    ExtractedField[]
   normalized   NormalizedAttribute[]
+  @@index([sessionId])
+  @@index([userId])
 }
 
 model ExtractedField {
@@ -59,6 +66,7 @@ model ExtractedField {
   source     String
   createdAt  DateTime @default(now())
   document   Document @relation(fields: [documentId], references: [id])
+  @@index([documentId])
 }
 
 model NormalizedAttribute {

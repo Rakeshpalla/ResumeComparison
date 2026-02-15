@@ -5,6 +5,9 @@ import {
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
+/** Default expiry for signed download URLs (1 hour). */
+const DEFAULT_SIGNED_DOWNLOAD_EXPIRY = 3600;
+
 const MAX_PROXY_UPLOAD_BYTES = 50 * 1024 * 1024; // 50MB
 
 const REGION = process.env.AWS_REGION || "us-east-1";
@@ -41,6 +44,21 @@ export async function createSignedUploadUrl(
     ContentType: contentType
   });
   return getSignedUrl(s3Client, command, { expiresIn: 300 });
+}
+
+/**
+ * Generate a signed GET URL for private file access (e.g. temporary download link).
+ * Use instead of exposing direct S3 URLs to clients.
+ */
+export async function createSignedDownloadUrl(
+  key: string,
+  expiresInSeconds: number = DEFAULT_SIGNED_DOWNLOAD_EXPIRY
+): Promise<string> {
+  const command = new GetObjectCommand({
+    Bucket: getBucket(),
+    Key: key
+  });
+  return getSignedUrl(s3Client, command, { expiresIn: expiresInSeconds });
 }
 
 export async function fetchObjectBuffer(key: string) {

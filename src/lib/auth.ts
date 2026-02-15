@@ -68,17 +68,21 @@ function isHttpsRequest(request: Request | NextRequest) {
   }
 }
 
+/**
+ * Production-grade cookie options: HttpOnly (no JS access), Secure in production,
+ * SameSite=Strict (CSRF mitigation), explicit path and maxAge.
+ */
 export function attachSessionCookie(
   response: NextResponse,
   token: string,
   request: Request | NextRequest
 ) {
+  const isProd = process.env.NODE_ENV === "production";
+  const secure = isProd ? true : isHttpsRequest(request);
   response.cookies.set(COOKIE_NAME, token, {
     httpOnly: true,
-    // Secure only when the request is actually HTTPS (or behind HTTPS proxy).
-    // This avoids breaking localhost (http) and still protects production.
-    secure: isHttpsRequest(request),
-    sameSite: "lax",
+    secure,
+    sameSite: "strict",
     path: "/",
     maxAge: TOKEN_TTL_SECONDS
   });
@@ -88,18 +92,16 @@ export function clearSessionCookie(
   response: NextResponse,
   request: Request | NextRequest
 ) {
-  // Clear the cookie with the same security attributes the browser will accept
-  // for this request scheme.
   const base = {
     httpOnly: true,
-    sameSite: "lax" as const,
+    sameSite: "strict" as const,
     path: "/",
     maxAge: 0
   };
-  const secure = isHttpsRequest(request);
+  const isProd = process.env.NODE_ENV === "production";
+  const secure = isProd ? true : isHttpsRequest(request);
   response.cookies.set(COOKIE_NAME, "", { ...base, secure });
-  // If we're on HTTPS, also attempt clearing a non-secure variant (harmless, maxAge=0).
-  if (secure) {
+  if (!isProd && secure) {
     response.cookies.set(COOKIE_NAME, "", { ...base, secure: false });
   }
 }

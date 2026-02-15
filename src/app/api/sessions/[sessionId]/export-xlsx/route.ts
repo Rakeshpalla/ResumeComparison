@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import * as XLSX from "xlsx-js-style";
 import { getUserFromRequest } from "../../../../../lib/auth";
 import { prisma } from "../../../../../lib/db";
+import { sanitizePlainText } from "../../../../../lib/sanitize";
 import {
   buildExcelModel,
   classifyLens,
@@ -398,7 +399,8 @@ export async function POST(
   { params }: { params: { sessionId: string } }
 ) {
   const body = (await request.json().catch(() => null)) as { jdText?: unknown } | null;
-  const jdText = typeof body?.jdText === "string" ? body.jdText : "";
+  const rawJd = typeof body?.jdText === "string" ? body.jdText : "";
+  const jdText = sanitizePlainText(rawJd, 50000);
   return handleExport({ request, sessionId: params.sessionId, jdText });
 }
 

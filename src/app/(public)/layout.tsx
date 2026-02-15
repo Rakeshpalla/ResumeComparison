@@ -1,5 +1,12 @@
 import type { ReactNode } from "react";
 import { Footer } from "../../components/Footer";
+import { buildMetadata } from "../../lib/metadata";
+
+export const metadata = buildMetadata({
+  title: "Resume Comparison Engine",
+  description:
+    "Consulting-grade resume comparison. Compare 2-5 resumes (PDF/DOCX), get hiring insights and Excel export. Make better hiring decisions, faster.",
+});
 
 export default function PublicLayout({ children }: { children: ReactNode }) {
   return (

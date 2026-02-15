@@ -1,9 +1,12 @@
 import Link from "next/link";
+import { buildMetadata } from "../../../lib/metadata";
 
-export const metadata = {
-  title: "Terms of Service | Resume Comparison Engine",
-  description: "Terms of Service for the Resume Comparison Engine service"
-};
+export const metadata = buildMetadata({
+  title: "Terms of Service",
+  description:
+    "Terms of Service for Resume Comparison Engine: acceptance, service description, your responsibilities, and limitations.",
+  path: "/terms",
+});
 
 export default function TermsPage() {
   return (

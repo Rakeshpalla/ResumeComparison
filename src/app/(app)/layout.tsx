@@ -1,6 +1,13 @@
 import type { ReactNode } from "react";
 import { Footer } from "../../components/Footer";
 import { HeaderActions } from "../../components/HeaderActions";
+import { buildMetadata } from "../../lib/metadata";
+
+export const metadata = buildMetadata({
+  title: "Dashboard",
+  description:
+    "Upload resumes, compare candidates, and export Excel reports. Consulting-grade resume comparison tool.",
+});
 
 export default function AppLayout({ children }: { children: ReactNode }) {
   return (
@@ -38,4 +45,3 @@ export default function AppLayout({ children }: { children: ReactNode }) {
     </>
   );
 }
-

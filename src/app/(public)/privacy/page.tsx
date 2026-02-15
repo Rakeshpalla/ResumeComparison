@@ -1,9 +1,12 @@
 import Link from "next/link";
+import { buildMetadata } from "../../../lib/metadata";
 
-export const metadata = {
-  title: "Privacy Policy | Resume Comparison Engine",
-  description: "Privacy Policy for the Resume Comparison Engine service"
-};
+export const metadata = buildMetadata({
+  title: "Privacy Policy",
+  description:
+    "Privacy Policy for Resume Comparison Engine: what data we collect, how we use it, and your choices. We respect your privacy.",
+  path: "/privacy",
+});
 
 export default function PrivacyPage() {
   return (

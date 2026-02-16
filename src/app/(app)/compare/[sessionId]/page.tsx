@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
+import { DocumentAnalyzer } from "../../../../components/DocumentAnalyzer";
 
 type ComparisonRow = {
   key: string;
@@ -191,8 +192,16 @@ export default function ComparePage() {
   const [jobDescription, setJobDescription] = useState<string>("");
   const [isEditingContext, setIsEditingContext] = useState(false);
   const [selectedDocIds, setSelectedDocIds] = useState<string[]>([]);
+  const processTriggeredRef = useRef(false);
 
   useEffect(() => { setHiringView("dashboard"); }, []);
+
+  // If user lands on compare with PENDING (e.g. shared link), kick off extraction once so polling can eventually see COMPLETED
+  useEffect(() => {
+    if (!sessionId || !data || data.status !== "PENDING" || data.documents.length < 2 || processTriggeredRef.current) return;
+    processTriggeredRef.current = true;
+    fetch(`/api/sessions/${sessionId}/process`, { method: "POST" }).catch(() => {});
+  }, [sessionId, data?.status, data?.documents?.length]);
 
   useEffect(() => {
     try {
@@ -521,12 +530,11 @@ export default function ComparePage() {
 
           {/* ─── Multi-doc ranking (3+ resumes) ─── */}
           {data.documents.length > 2 && data.status !== "COMPLETED" ? (
-            <div className="animate-fade-in rounded-2xl border border-slate-200 bg-white p-8 shadow-soft">
-              <div className="flex flex-col items-center justify-center gap-4 py-8">
-                <div className="h-12 w-12 animate-spin rounded-full border-4 border-indigo-200 border-t-indigo-600" />
-                <p className="text-center text-sm font-semibold text-slate-700">Analyzing resumes…</p>
-                <p className="text-center text-xs text-slate-500">Ranking and recommendation will appear when analysis is complete.</p>
-              </div>
+            <div className="animate-fade-in">
+              <DocumentAnalyzer
+                title="Analyzing resumes"
+                subtitle="Usually 15–30 seconds. Ranking and recommendation will appear when complete."
+              />
             </div>
           ) : rankUi && data.documents.length > 2 ? (
             <div className="animate-fade-in rounded-2xl border border-slate-200 bg-white p-6 shadow-soft">
@@ -699,11 +707,11 @@ export default function ComparePage() {
           {data.documents.length <= 2 ? (
             <div className="rounded border border-slate-200 bg-white p-6 shadow-sm">
               {data.status !== "COMPLETED" ? (
-                <div className="flex flex-col items-center justify-center gap-4 py-8">
-                  <div className="h-12 w-12 animate-spin rounded-full border-4 border-indigo-200 border-t-indigo-600" />
-                  <p className="text-center text-sm font-semibold text-slate-700">Analyzing resumes…</p>
-                  <p className="text-center text-xs text-slate-500">Comparison will appear when analysis is complete.</p>
-                </div>
+                <DocumentAnalyzer
+                  compact
+                  title="Analyzing resumes"
+                  subtitle="Usually 15–30 seconds. Comparison will appear when complete."
+                />
               ) : (
                 <>
               <div className="flex flex-wrap items-center justify-between gap-3">

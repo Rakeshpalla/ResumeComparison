@@ -18,6 +18,67 @@ function extractorForMimeType(mimeType: string) {
   return null;
 }
 
+/** Process a single document: fetch, extract, persist. Runs in parallel with other docs. */
+async function processOneDocument(
+  sessionId: string,
+  document: { id: string; s3Key: string; mimeType: string }
+): Promise<{ success: boolean }> {
+  try {
+    const extractor = extractorForMimeType(document.mimeType);
+    if (!extractor) {
+      throw new Error(`Unsupported mimeType: ${document.mimeType}`);
+    }
+    const buffer = await fetchObjectBuffer(document.s3Key);
+    const fields = await extractor.extract(buffer);
+
+    const normalized = fields
+      .filter((field) => !field.name.startsWith("__"))
+      .map((field) => {
+        const key = normalizeAttributeName(field.name);
+        return {
+          sessionId,
+          documentId: document.id,
+          key,
+          displayName: displayNameForKey(key),
+          value: field.value
+        };
+      });
+
+    await prisma.$transaction([
+      prisma.extractedField.deleteMany({
+        where: { documentId: document.id }
+      }),
+      prisma.normalizedAttribute.deleteMany({
+        where: { documentId: document.id }
+      }),
+      prisma.extractedField.createMany({
+        data: fields.map((field) => ({
+          documentId: document.id,
+          name: field.name,
+          value: field.value,
+          source: field.source
+        }))
+      })
+    ]);
+
+    if (normalized.length > 0) {
+      await prisma.normalizedAttribute.createMany({ data: normalized });
+    }
+
+    await prisma.document.update({
+      where: { id: document.id },
+      data: { status: "EXTRACTED" }
+    });
+    return { success: true };
+  } catch {
+    await prisma.document.update({
+      where: { id: document.id },
+      data: { status: "FAILED" }
+    }).catch(() => undefined);
+    return { success: false };
+  }
+}
+
 export async function processSessionExtraction(sessionId: string) {
   const session = await prisma.comparisonSession.findUnique({
     where: { id: sessionId },
@@ -32,62 +93,11 @@ export async function processSessionExtraction(sessionId: string) {
     data: { status: "PROCESSING" }
   });
 
-  let hasFailure = false;
-  for (const document of session.documents) {
-    try {
-      const extractor = extractorForMimeType(document.mimeType);
-      if (!extractor) {
-        throw new Error(`Unsupported mimeType: ${document.mimeType}`);
-      }
-      const buffer = await fetchObjectBuffer(document.s3Key);
-      const fields = await extractor.extract(buffer);
-
-      await prisma.$transaction([
-        prisma.extractedField.deleteMany({
-          where: { documentId: document.id }
-        }),
-        prisma.normalizedAttribute.deleteMany({
-          where: { documentId: document.id }
-        }),
-        prisma.extractedField.createMany({
-          data: fields.map((field) => ({
-            documentId: document.id,
-            name: field.name,
-            value: field.value,
-            source: field.source
-          }))
-        })
-      ]);
-
-      const normalized = fields
-        .filter((field) => !field.name.startsWith("__"))
-        .map((field) => {
-        const key = normalizeAttributeName(field.name);
-        return {
-          sessionId,
-          documentId: document.id,
-          key,
-          displayName: displayNameForKey(key),
-          value: field.value
-        };
-      });
-
-      if (normalized.length > 0) {
-        await prisma.normalizedAttribute.createMany({ data: normalized });
-      }
-
-      await prisma.document.update({
-        where: { id: document.id },
-        data: { status: "EXTRACTED" }
-      });
-    } catch {
-      hasFailure = true;
-      await prisma.document.update({
-        where: { id: document.id },
-        data: { status: "FAILED" }
-      });
-    }
-  }
+  // Process all documents in parallel to cut total time (e.g. 4 docs: ~max(per-doc) instead of sum)
+  const results = await Promise.all(
+    session.documents.map((doc) => processOneDocument(sessionId, doc))
+  );
+  const hasFailure = results.some((r) => !r.success);
 
   await prisma.comparisonSession.update({
     where: { id: sessionId },

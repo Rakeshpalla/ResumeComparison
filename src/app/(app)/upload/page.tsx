@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { DocumentAnalyzer } from "../../../components/DocumentAnalyzer";
 
 type UploadStatus = "idle" | "uploading" | "processing" | "complete" | "error";
 
@@ -196,7 +197,7 @@ export default function UploadPage() {
     }
     setStatus("processing");
     try {
-      // Trigger processing (async) - don't wait for completion
+      // Run extraction in the request; wait for completion so compare page loads with results (no long "Analyzing" wait there)
       const processResponse = await fetch(`/api/sessions/${id}/process`, {
         method: "POST"
       });
@@ -204,13 +205,13 @@ export default function UploadPage() {
         window.location.href = "/login";
         return false;
       }
+      const body = await processResponse.json().catch(() => ({}));
       if (!processResponse.ok) {
-        const body = await processResponse.json();
-        throw new Error(body.error || "Failed to start processing.");
+        throw new Error(body.error || "Failed to process resumes.");
       }
-      
-      // PERFORMANCE OPTIMIZATION: Redirect immediately instead of waiting
-      // The compare page will poll for completion
+      if (body.status === "FAILED") {
+        throw new Error("Analysis failed for one or more resumes. Please try again.");
+      }
       setStatus("complete");
       window.location.replace(`/compare/${id}`);
       return true;
@@ -551,7 +552,7 @@ export default function UploadPage() {
                   </h3>
                   <p className="mt-1 text-sm text-slate-600">
                     {status === "processing"
-                      ? "Analyzing resumes and extracting insights..."
+                      ? "Analyzing resumes… (usually 15–30 seconds)"
                       : "Ready to analyze and compare candidates"}
                   </p>
                 </div>
@@ -590,18 +591,23 @@ export default function UploadPage() {
               </button>
             </div>
 
-            {(status === "uploading" || status === "processing") && (
+            {status === "uploading" && (
               <div className="mt-6">
                 <div className="h-2 overflow-hidden rounded-full bg-white/50">
-                  <div className="h-full animate-pulse rounded-full bg-gradient-to-r from-indigo-600 to-purple-600" style={{ width: status === "uploading" ? "60%" : "90%" }} />
+                  <div className="h-full animate-pulse rounded-full bg-gradient-to-r from-indigo-600 to-purple-600" style={{ width: "60%" }} />
                 </div>
                 <p className="mt-2 text-center text-xs font-medium text-slate-600">
-                  {status === "uploading" && currentUploadName
-                    ? `Uploading ${currentUploadName}...`
-                    : status === "processing"
-                    ? "Extracting text, scoring dimensions, generating insights..."
-                    : "Processing..."}
+                  {currentUploadName ? `Uploading ${currentUploadName}...` : "Uploading..."}
                 </p>
+              </div>
+            )}
+            {status === "processing" && (
+              <div className="mt-6">
+                <DocumentAnalyzer
+                  compact
+                  title="Analyzing resumes"
+                  subtitle="Usually 15–30 seconds. Extracting text, scoring dimensions, and generating insights."
+                />
               </div>
             )}
           </div>

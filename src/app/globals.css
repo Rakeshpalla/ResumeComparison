@@ -88,6 +88,29 @@ html {
   will-change: transform, opacity;
 }
 
+/* Document analyzer / scanner */
+@keyframes doc-analyzer-scan {
+  0%, 100% { top: 8%; opacity: 0.9; }
+  50% { top: 92%; opacity: 1; }
+}
+@keyframes doc-analyzer-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+@keyframes doc-analyzer-step {
+  0%, 100% { opacity: 0.85; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.05); }
+}
+.animate-doc-scan {
+  animation: doc-analyzer-scan 1.8s ease-in-out infinite;
+}
+.animate-doc-float {
+  animation: doc-analyzer-float 2.5s ease-in-out infinite;
+}
+.animate-doc-step {
+  animation: doc-analyzer-step 2s ease-in-out infinite;
+}
+
 /* Card hover effect - GPU accelerated */
 .card-hover {
   @apply transition-all duration-200 hover:shadow-xl;

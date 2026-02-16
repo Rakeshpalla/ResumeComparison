@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUserFromRequest } from "../../../../../lib/auth";
 import { prisma } from "../../../../../lib/db";
-import { enqueueSessionExtraction } from "../../../../../services/extractionService";
+import { processSessionExtraction } from "../../../../../services/extractionService";
 import { checkRateLimit } from "../../../../../lib/rate-limit";
 
 export const runtime = "nodejs";
+// Allow up to 60s so extraction (parallelized) can finish; Vercel Pro supports 60s.
+export const maxDuration = 60;
 
 export async function POST(
   request: NextRequest,
@@ -35,6 +37,24 @@ export async function POST(
     return NextResponse.json({ status: session.status });
   }
 
-  enqueueSessionExtraction(session.id);
-  return NextResponse.json({ status: "PROCESSING" });
+  if (session.status === "COMPLETED") {
+    return NextResponse.json({ status: "COMPLETED" });
+  }
+
+  try {
+    await processSessionExtraction(session.id);
+    const updated = await prisma.comparisonSession.findUnique({
+      where: { id: session.id },
+      select: { status: true }
+    });
+    return NextResponse.json({ status: updated?.status ?? "COMPLETED" });
+  } catch {
+    await prisma.comparisonSession
+      .update({
+        where: { id: session.id },
+        data: { status: "FAILED" }
+      })
+      .catch(() => undefined);
+    return NextResponse.json({ status: "FAILED" }, { status: 500 });
+  }
 }

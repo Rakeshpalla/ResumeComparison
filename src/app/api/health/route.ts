@@ -10,8 +10,10 @@ export async function GET() {
     return NextResponse.json({ ok: true });
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
-    const hint =
-      /Can't reach database server|connection refused|ECONNREFUSED|getaddrinfo/i.test(msg)
+    const isConnectionError = /Can't reach database server|connection refused|ECONNREFUSED|getaddrinfo/i.test(msg);
+    const hint = process.env.VERCEL === "1"
+      ? " Set DATABASE_URL and DIRECT_DATABASE_URL in Vercel (Settings → Environment Variables), then run: npx prisma migrate deploy. See DEPLOY.md."
+      : isConnectionError
         ? " Start the database with: docker compose up -d (ensure Docker Desktop is running)."
         : "";
     return NextResponse.json(

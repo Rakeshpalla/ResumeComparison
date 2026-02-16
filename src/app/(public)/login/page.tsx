@@ -58,7 +58,9 @@ export default function LoginPage() {
           <p className="text-sm font-semibold text-amber-900">Database not available</p>
           <p className="mt-1 text-xs text-amber-800">{dbUnavailable}</p>
           <p className="mt-2 text-xs text-amber-700">
-            In the project folder run: <code className="rounded bg-amber-100 px-1.5 py-0.5 font-mono">docker compose up -d</code>
+            {typeof window !== "undefined" && window.location.hostname.includes("vercel.app")
+              ? "Set DATABASE_URL and DIRECT_DATABASE_URL in Vercel (Settings → Environment Variables), then run: npx prisma migrate deploy. See DEPLOY.md in the repo."
+              : "In the project folder run: docker compose up -d"}
           </p>
         </div>
       )}

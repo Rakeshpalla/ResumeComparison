@@ -230,9 +230,12 @@ export default function ComparePage() {
 
   useEffect(() => {
     if (!sessionId) return;
+    if (data?.status !== "COMPLETED" || !data?.documents || data.documents.length > 2) {
+      setHiringUi(null);
+      return;
+    }
     let active = true;
     async function loadHiringUi() {
-      if (data?.documents && data.documents.length > 2) { setHiringUi(null); return; }
       try {
         const jd = jobDescription.trim();
         const response = jd.length > 0
@@ -246,13 +249,17 @@ export default function ComparePage() {
     }
     loadHiringUi();
     return () => { active = false; };
-  }, [sessionId, jobDescription, data?.documents]);
+  }, [sessionId, jobDescription, data?.status, data?.documents]);
 
   useEffect(() => {
     if (!sessionId) return;
+    // Only load rank after extraction is complete so we don't show "No strong candidates" from partial data
+    if (data?.status !== "COMPLETED" || !data?.documents || data.documents.length <= 2) {
+      setRankUi(null);
+      return;
+    }
     let active = true;
     async function loadRank() {
-      if (!data?.documents || data.documents.length <= 2) { setRankUi(null); return; }
       try {
         const ctx = jobDescription.trim();
         const url = `/api/sessions/${sessionId}/rank?lens=${lens}`;
@@ -270,7 +277,7 @@ export default function ComparePage() {
     }
     loadRank();
     return () => { active = false; };
-  }, [data?.documents, jobDescription, lens, sessionId]);
+  }, [data?.status, data?.documents, jobDescription, lens, sessionId]);
 
   async function handleExportExcel() {
     setExportError(null); setIsExporting(true);
@@ -513,7 +520,15 @@ export default function ComparePage() {
         <div className="flex flex-col gap-6">
 
           {/* ─── Multi-doc ranking (3+ resumes) ─── */}
-          {rankUi && data.documents.length > 2 ? (
+          {data.documents.length > 2 && data.status !== "COMPLETED" ? (
+            <div className="animate-fade-in rounded-2xl border border-slate-200 bg-white p-8 shadow-soft">
+              <div className="flex flex-col items-center justify-center gap-4 py-8">
+                <div className="h-12 w-12 animate-spin rounded-full border-4 border-indigo-200 border-t-indigo-600" />
+                <p className="text-center text-sm font-semibold text-slate-700">Analyzing resumes…</p>
+                <p className="text-center text-xs text-slate-500">Ranking and recommendation will appear when analysis is complete.</p>
+              </div>
+            </div>
+          ) : rankUi && data.documents.length > 2 ? (
             <div className="animate-fade-in rounded-2xl border border-slate-200 bg-white p-6 shadow-soft">
               {/* Recommendation Banner */}
               <div className={`rounded-xl border-2 p-5 mb-6 shadow-soft ${strengthBanner(rankUi.recommendation.strength)}`}>
@@ -683,6 +698,14 @@ export default function ComparePage() {
           {/* ─── 2-doc hiring dashboard ─── */}
           {data.documents.length <= 2 ? (
             <div className="rounded border border-slate-200 bg-white p-6 shadow-sm">
+              {data.status !== "COMPLETED" ? (
+                <div className="flex flex-col items-center justify-center gap-4 py-8">
+                  <div className="h-12 w-12 animate-spin rounded-full border-4 border-indigo-200 border-t-indigo-600" />
+                  <p className="text-center text-sm font-semibold text-slate-700">Analyzing resumes…</p>
+                  <p className="text-center text-xs text-slate-500">Comparison will appear when analysis is complete.</p>
+                </div>
+              ) : (
+                <>
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex gap-2">
                   <button type="button" className={hiringView === "dashboard" ? "rounded bg-slate-900 px-3 py-1.5 text-sm font-semibold text-white" : "rounded border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"} onClick={() => setHiringView("dashboard")}>Hiring dashboard</button>
@@ -861,6 +884,8 @@ export default function ComparePage() {
                     </table>
                   </div>
                 </div>
+              )}
+                </>
               )}
             </div>
           ) : null}

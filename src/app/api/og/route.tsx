@@ -7,7 +7,7 @@ const SITE_NAME = "Resume Comparison Engine";
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const title = searchParams.get("title") || SITE_NAME;
-  const subtitle = searchParams.get("subtitle") || "Compare 2–5 resumes · Excel export · Consulting-grade";
+  const subtitle = searchParams.get("subtitle") || "Compare 2–5 resumes · Consulting-grade";
 
   return new ImageResponse(
     (

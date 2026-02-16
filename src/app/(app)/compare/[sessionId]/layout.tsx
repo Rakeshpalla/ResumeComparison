@@ -7,7 +7,7 @@ export function generateMetadata({ params }: Props) {
   const { sessionId } = params;
   return buildMetadata({
     title: "Compare Resumes",
-    description: `Compare candidates for session ${sessionId.slice(0, 8)}… View rankings, insights, and export to Excel.`,
+    description: `Compare candidates for session ${sessionId.slice(0, 8)}… View rankings and hiring insights.`,
     path: `/compare/${sessionId}`,
   });
 }

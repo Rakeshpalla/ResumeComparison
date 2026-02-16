@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 const SITE_NAME = "Resume Comparison Engine";
 const DEFAULT_DESCRIPTION =
-  "Consulting-grade resume comparison tool. Compare 2-5 resumes (PDF/DOCX), get structured analysis, and export decision-ready Excel reports with executive scorecards and hiring insights.";
+  "Consulting-grade resume comparison tool. Compare 2-5 resumes (PDF/DOCX), get structured analysis, executive scorecards, and hiring insights.";
 const TWITTER_HANDLE = process.env.NEXT_PUBLIC_TWITTER_HANDLE || "";
 const KEYWORDS = [
   "resume comparison",
@@ -10,7 +10,6 @@ const KEYWORDS = [
   "candidate comparison",
   "resume analysis",
   "hiring tool",
-  "Excel export",
   "consulting-grade",
   "side-by-side resumes"
 ];

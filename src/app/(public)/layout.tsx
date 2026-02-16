@@ -5,7 +5,7 @@ import { buildMetadata } from "../../lib/metadata";
 export const metadata = buildMetadata({
   title: "Resume Comparison Engine",
   description:
-    "Consulting-grade resume comparison. Compare 2-5 resumes (PDF/DOCX), get hiring insights and Excel export. Make better hiring decisions, faster.",
+    "Consulting-grade resume comparison. Compare 2-5 resumes (PDF/DOCX) and get hiring insights. Make better hiring decisions, faster.",
 });
 
 export default function PublicLayout({ children }: { children: ReactNode }) {
@@ -27,9 +27,6 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
                 Make better hiring decisions, faster
               </div>
             </div>
-          </div>
-          <div className="hidden rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700 md:block">
-            ✨ Consulting-grade · Excel-ready
           </div>
         </div>
       </header>

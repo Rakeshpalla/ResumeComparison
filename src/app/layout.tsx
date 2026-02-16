@@ -9,7 +9,7 @@ export const metadata = {
   ...buildMetadata({
     title: "Resume Comparison Engine",
     description:
-      "Consulting-grade resume comparison tool. Compare 2-5 resumes (PDF/DOCX), get structured analysis, and export decision-ready Excel reports with executive scorecards and hiring insights.",
+      "Consulting-grade resume comparison tool. Compare 2-5 resumes (PDF/DOCX), get structured analysis, executive scorecards, and hiring insights.",
     path: "/",
   }),
   metadataBase: new URL(getBaseUrl()),

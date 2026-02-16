@@ -6,7 +6,7 @@ import { buildMetadata } from "../../lib/metadata";
 export const metadata = buildMetadata({
   title: "Dashboard",
   description:
-    "Upload resumes, compare candidates, and export Excel reports. Consulting-grade resume comparison tool.",
+    "Upload resumes and compare candidates. Consulting-grade resume comparison tool.",
 });
 
 export default function AppLayout({ children }: { children: ReactNode }) {
@@ -33,9 +33,6 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             </div>
           </div>
           <div className="flex items-center gap-4">
-            <div className="hidden rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700 lg:block">
-              ✨ Consulting-grade · Excel-ready
-            </div>
             <HeaderActions />
           </div>
         </div>

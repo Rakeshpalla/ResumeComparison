@@ -545,7 +545,7 @@ export default function ComparePage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                   </svg>
                   <span className="font-semibold text-indigo-900">
-                    Select <span className="text-indigo-600">2</span> for Excel export
+                    Select <span className="text-indigo-600">2</span> candidates for detailed comparison
                   </span>
                 </div>
               </div>

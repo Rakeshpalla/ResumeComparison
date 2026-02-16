@@ -30,7 +30,7 @@ export function webSiteSchema() {
     "@type": "WebSite",
     name: SITE_NAME,
     url: baseUrl,
-    description: "Compare resumes, get hiring insights, export Excel reports.",
+    description: "Compare resumes and get hiring insights.",
     potentialAction: {
       "@type": "SearchAction",
       target: { "@type": "EntryPoint", urlTemplate: `${baseUrl}/login` },
@@ -48,7 +48,7 @@ export function softwareApplicationSchema() {
     applicationCategory: "BusinessApplication",
     operatingSystem: "Web",
     url: baseUrl,
-    description: "Upload 2-5 resumes (PDF/DOCX), get side-by-side comparison, executive scorecards, and Excel export.",
+    description: "Upload 2-5 resumes (PDF/DOCX), get side-by-side comparison and executive scorecards.",
     offers: {
       "@type": "Offer",
       price: "0",

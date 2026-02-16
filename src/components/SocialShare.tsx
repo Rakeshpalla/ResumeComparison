@@ -12,7 +12,7 @@ type SocialShareProps = {
 };
 
 const defaultTitle = "Resume Comparison Engine";
-const defaultText = "Consulting-grade resume comparison: compare 2–5 resumes (PDF/DOCX), get hiring insights and Excel export.";
+const defaultText = "Consulting-grade resume comparison: compare 2–5 resumes (PDF/DOCX) and get hiring insights.";
 
 export function SocialShare({
   url = typeof window !== "undefined" ? window.location.href : getBaseUrl(),

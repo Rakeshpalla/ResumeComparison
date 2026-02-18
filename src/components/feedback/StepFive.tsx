@@ -11,7 +11,7 @@ type Props = {
 };
 
 /**
- * Step 5: Value Exchange & Contact — disappear reaction, would recommend, optional email.
+ * Step 5: Value Exchange — disappear reaction, would recommend. (No email collection.)
  */
 export function StepFive({ control, errors }: Props) {
   return (
@@ -64,33 +64,6 @@ export function StepFive({ control, errors }: Props) {
           )}
         />
         {errors.would_recommend && <p className="mt-1 text-sm text-red-600">{errors.would_recommend.message}</p>}
-      </div>
-
-      <div>
-        <label htmlFor="email" className="mb-2 block text-sm font-medium text-slate-700">
-          Drop your email to receive a personalized hiring tip based on your answers
-        </label>
-        <p className="mb-2 text-xs text-slate-500">We&apos;ll send one useful email — no spam, ever.</p>
-        <Controller
-          name="email"
-          control={control}
-          rules={{
-            validate: (v) => {
-              if (!v || v.trim() === "") return true;
-              return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) || "Invalid email";
-            },
-          }}
-          render={({ field }) => (
-            <input
-              id="email"
-              type="email"
-              placeholder="you@company.com"
-              className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-slate-900 placeholder:text-slate-400"
-              {...field}
-            />
-          )}
-        />
-        {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>}
       </div>
     </div>
   );

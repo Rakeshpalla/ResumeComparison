@@ -3,34 +3,17 @@
 /**
  * Thank You card: personalized tip by rating and social share.
  */
-export function ThankYouCard({
-  name,
-  usefulnessRating,
-  emailSent,
-}: {
-  name?: string | null;
-  usefulnessRating: number;
-  /** True if we actually sent the tips email (Resend configured and send succeeded). */
-  emailSent?: boolean;
-}) {
+export function ThankYouCard({ usefulnessRating }: { usefulnessRating: number }) {
   const tipBlock = getTipBlock(usefulnessRating);
   const shareUrl = typeof window !== "undefined" ? window.location.origin + "/feedback" : "";
   const tweetText = `I just tried the Resume Comparison Engine — compare 2-5 resumes with AI. Worth a look for hiring managers.`;
   const tweetUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}&url=${encodeURIComponent(shareUrl)}`;
 
-  const thanksMessage = name
-    ? emailSent
-      ? "We've sent a short email with practical tips to your inbox (check spam if you don't see it)."
-      : "Your feedback was saved. We couldn't send the tips email this time — your response is still recorded."
-    : "Your feedback helps us build a better tool.";
-
   return (
     <div className="space-y-6">
       <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h3 className="text-lg font-semibold text-slate-900">
-          {name ? `Thanks, ${name.split("@")[0]}!` : "Thank you!"}
-        </h3>
-        <p className="mt-2 text-slate-600">{thanksMessage}</p>
+        <h3 className="text-lg font-semibold text-slate-900">Thank you!</h3>
+        <p className="mt-2 text-slate-600">Your feedback was saved.</p>
       </div>
 
       <div className="rounded-xl border border-indigo-100 bg-indigo-50/50 p-6">

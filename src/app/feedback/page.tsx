@@ -103,8 +103,6 @@ export default function FeedbackPage() {
       const result = await res.json();
       const params = new URLSearchParams();
       if (result.usefulness_rating != null) params.set("rating", String(result.usefulness_rating));
-      if (result.email) params.set("email", result.email);
-      if (result.email_sent === true) params.set("email_sent", "1");
       window.location.href = `/feedback/thank-you?${params.toString()}`;
     } catch (e) {
       setSubmitError(e instanceof Error ? e.message : "Something went wrong. Please try again.");

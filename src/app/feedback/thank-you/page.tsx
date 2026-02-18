@@ -15,14 +15,10 @@ type Props = {
 export default function ThankYouPage({ searchParams }: Props) {
   const params = searchParams;
   const rating = typeof params.rating === "string" ? params.rating : "";
-  const email = typeof params.email === "string" ? params.email : "";
-  const emailSent = params.email_sent === "1";
 
   return (
     <ThankYouContent
       usefulnessRating={rating ? parseInt(rating, 10) : 0}
-      email={email || undefined}
-      emailSent={emailSent}
     />
   );
 }

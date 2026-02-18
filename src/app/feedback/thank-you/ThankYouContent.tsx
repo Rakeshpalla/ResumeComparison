@@ -6,16 +6,7 @@ import { ThankYouCard } from "@/components/feedback/ThankYouCard";
 /**
  * Client wrapper for thank-you page: personalized tip and share.
  */
-export function ThankYouContent({
-  usefulnessRating,
-  email,
-  emailSent,
-}: {
-  usefulnessRating: number;
-  email?: string;
-  emailSent?: boolean;
-}) {
-  const name = email ? email.split("@")[0] : null;
+export function ThankYouContent({ usefulnessRating }: { usefulnessRating: number }) {
   return (
     <div className="mx-auto max-w-xl py-8">
       <div className="mb-8">
@@ -24,11 +15,7 @@ export function ThankYouContent({
         </Link>
       </div>
       <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-        <ThankYouCard
-          name={name}
-          usefulnessRating={usefulnessRating}
-          emailSent={emailSent}
-        />
+        <ThankYouCard usefulnessRating={usefulnessRating} />
       </div>
     </div>
   );

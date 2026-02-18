@@ -94,3 +94,24 @@ enum DocumentStatus {
   EXTRACTED
   FAILED
 }
+
+/// Product feedback from /feedback form (Neon/Prisma; no auth required for insert).
+model FeedbackResponse {
+  id                String   @id @default(uuid())
+  createdAt         DateTime @default(now()) @map("created_at")
+  role              String?
+  resumesPerRole    String?  @map("resumes_per_role")
+  previousMethod    String?  @map("previous_method")
+  painPoint         String?  @map("pain_point")
+  usefulnessRating  Int?     @map("usefulness_rating")
+  valuableFeatures  String[] @map("valuable_features")
+  confidenceAfter   String?  @map("confidence_after")
+  missingFeatures   String[] @map("missing_features")
+  missingOther      String?  @map("missing_other")
+  openFeedback      String?  @map("open_feedback")
+  disappearReaction String?  @map("disappear_reaction")
+  wouldRecommend   String?  @map("would_recommend")
+  email             String?
+
+  @@map("feedback_responses")
+}

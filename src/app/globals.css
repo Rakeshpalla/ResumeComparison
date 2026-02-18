@@ -137,3 +137,12 @@ html {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Hide Next.js dev error overlay ("1 error" badge) - dev only; no effect in production */
+nextjs-portal {
+  display: none !important;
+}
+body {
+  padding-right: 0 !important;
+  overflow: auto !important;
+}

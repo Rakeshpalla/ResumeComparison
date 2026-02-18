@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import Link from "next/link";
 import { Footer } from "../../components/Footer";
 import { HeaderActions } from "../../components/HeaderActions";
 import { buildMetadata } from "../../lib/metadata";
@@ -37,6 +38,14 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           </div>
         </div>
       </header>
+      <div className="border-b border-indigo-100 bg-indigo-50/80 py-2 text-center text-sm">
+        <Link
+          href="/feedback"
+          className="font-medium text-indigo-700 hover:text-indigo-800 hover:underline"
+        >
+          Love this tool? Give us 30 seconds of feedback →
+        </Link>
+      </div>
       <main className="mx-auto flex min-h-[calc(100vh-73px)] max-w-7xl flex-col px-4 py-6 sm:px-6 sm:py-8 lg:px-8">{children}</main>
       <Footer />
     </>

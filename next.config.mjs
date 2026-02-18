@@ -27,6 +27,8 @@ const securityHeaders = [
 
 const nextConfig = {
   reactStrictMode: true,
+  /** Hides the "1 error" / build-activity badge in the bottom-left during dev */
+  devIndicators: { buildActivity: false },
   experimental: {
     serverActions: {
       bodySizeLimit: "50mb"

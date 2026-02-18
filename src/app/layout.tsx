@@ -9,10 +9,11 @@ export const metadata = {
   ...buildMetadata({
     title: "Resume Comparison Engine",
     description:
-      "Consulting-grade resume comparison tool. Compare 2-5 resumes (PDF/DOCX), get structured analysis, executive scorecards, and hiring insights.",
+      "Compare 2-5 resumes in minutes, not hours. AI-powered side-by-side analysis trusted by hiring managers. Free. Reduce bias, shortlist with confidence.",
     path: "/",
   }),
   metadataBase: new URL(getBaseUrl()),
+  alternates: { canonical: getBaseUrl() },
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

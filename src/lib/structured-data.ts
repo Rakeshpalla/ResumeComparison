@@ -9,7 +9,7 @@ export function organizationSchema() {
     "@type": "Organization",
     name: SITE_NAME,
     url: baseUrl,
-    description: "Consulting-grade resume comparison tool for better hiring decisions.",
+    description: "AI-powered resume comparison tool. Compare 2-5 resumes (PDF/DOCX) in minutes. Used by hiring managers and recruiters to shortlist candidates and reduce bias.",
     sameAs: [
       process.env.NEXT_PUBLIC_TWITTER_URL,
       process.env.NEXT_PUBLIC_LINKEDIN_URL,
@@ -18,7 +18,7 @@ export function organizationSchema() {
     contactPoint: {
       "@type": "ContactPoint",
       contactType: "Customer Service",
-      url: baseUrl,
+      url: `${baseUrl}/feedback`,
     },
   };
 }
@@ -30,7 +30,7 @@ export function webSiteSchema() {
     "@type": "WebSite",
     name: SITE_NAME,
     url: baseUrl,
-    description: "Compare resumes and get hiring insights.",
+    description: "Free AI resume comparison tool. Upload 2-5 resumes, get side-by-side analysis, scoring, and hiring recommendations in minutes. Trusted by hiring managers.",
     potentialAction: {
       "@type": "SearchAction",
       target: { "@type": "EntryPoint", urlTemplate: `${baseUrl}/login` },
@@ -48,12 +48,19 @@ export function softwareApplicationSchema() {
     applicationCategory: "BusinessApplication",
     operatingSystem: "Web",
     url: baseUrl,
-    description: "Upload 2-5 resumes (PDF/DOCX), get side-by-side comparison and executive scorecards.",
+    description: "Compare 2-5 resumes in minutes with AI. Side-by-side analysis, skills gap detection, scoring, and hiring recommendations. Free. Used by hiring managers and recruiters to shortlist candidates and reduce bias.",
     offers: {
       "@type": "Offer",
       price: "0",
       priceCurrency: "USD",
     },
+    featureList: [
+      "Compare 2-5 resumes (PDF/DOCX) at once",
+      "AI-powered side-by-side analysis",
+      "Skills gap and fit scoring",
+      "Hiring recommendations",
+      "Reduce bias in shortlisting",
+    ],
   };
 }
 

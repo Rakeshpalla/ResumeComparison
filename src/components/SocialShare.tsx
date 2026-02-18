@@ -11,9 +11,9 @@ type SocialShareProps = {
   className?: string;
 };
 
-const defaultTitle = "Resume Comparison Engine";
-// Used when sharing to X, WhatsApp, email, etc. Do not mention Excel or CSV (export not offered in UI).
-const defaultText = "Consulting-grade resume comparison: compare 2–5 resumes (PDF/DOCX) and get hiring insights.";
+const defaultTitle = "Resume Comparison Engine — Compare 2-5 Resumes in Minutes";
+// Viral hook for shares on X, LinkedIn, WhatsApp, etc.
+const defaultText = "I just compared 5 resumes in under 2 minutes. This free AI tool is a game-changer for hiring. Try it →";
 
 export function SocialShare({
   url = typeof window !== "undefined" ? window.location.href : getBaseUrl(),

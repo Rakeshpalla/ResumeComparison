@@ -2,16 +2,23 @@ import type { Metadata } from "next";
 
 const SITE_NAME = "Resume Comparison Engine";
 const DEFAULT_DESCRIPTION =
-  "Consulting-grade resume comparison tool. Compare 2-5 resumes (PDF/DOCX), get structured analysis, executive scorecards, and hiring insights.";
+  "Compare 2-5 resumes in minutes, not hours. AI-powered side-by-side analysis trusted by hiring managers. Free resume comparison tool — reduce bias, shortlist with confidence.";
 const TWITTER_HANDLE = process.env.NEXT_PUBLIC_TWITTER_HANDLE || "";
 const KEYWORDS = [
   "resume comparison",
-  "hire better",
+  "resume comparison tool",
+  "compare resumes online",
+  "AI resume screening",
+  "hiring manager tool",
   "candidate comparison",
+  "resume ranking",
+  "shortlist candidates",
   "resume analysis",
-  "hiring tool",
-  "consulting-grade",
-  "side-by-side resumes"
+  "hire better",
+  "side-by-side resumes",
+  "consulting-grade hiring",
+  "reduce hiring bias",
+  "resume scoring",
 ];
 
 export function getBaseUrl(): string {

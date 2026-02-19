@@ -26,10 +26,10 @@ export default function UploadError({
           Try again
         </button>
         <a
-          href="/login"
+          href={process.env.NEXT_PUBLIC_REQUIRE_LOGIN === "true" ? "/login" : "/upload"}
           className="rounded border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-800 hover:bg-red-50"
         >
-          Back to login
+          {process.env.NEXT_PUBLIC_REQUIRE_LOGIN === "true" ? "Back to login" : "Back to upload"}
         </a>
       </div>
     </div>

@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { redirect } from "next/navigation";
 import { buildMetadata } from "../../../lib/metadata";
 
 export const metadata = buildMetadata({
@@ -9,5 +10,8 @@ export const metadata = buildMetadata({
 });
 
 export default function LoginLayout({ children }: { children: ReactNode }) {
+  if (process.env.REQUIRE_LOGIN !== "true") {
+    redirect("/upload");
+  }
   return <>{children}</>;
 }

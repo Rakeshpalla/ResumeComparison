@@ -59,6 +59,12 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // Guest-only by default: allow /upload and /compare without login unless REQUIRE_LOGIN is set
+  const requireLogin = process.env.REQUIRE_LOGIN === "true";
+  if (!requireLogin) {
+    return NextResponse.next();
+  }
+
   const token = request.cookies.get("specsheet_session")?.value;
   const valid = await verifyToken(token);
   if (!valid) {

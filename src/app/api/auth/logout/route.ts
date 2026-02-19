@@ -4,8 +4,8 @@ import { clearSessionCookie } from "../../../../lib/auth";
 export const runtime = "nodejs";
 
 export async function GET(request: Request) {
-  // Browser navigation friendly logout (clears cookie + redirects).
-  const redirectUrl = new URL("/login", request.url);
+  const requireLogin = process.env.REQUIRE_LOGIN === "true";
+  const redirectUrl = new URL(requireLogin ? "/login" : "/upload", request.url);
   const response = NextResponse.redirect(redirectUrl);
   clearSessionCookie(response, request);
   // Best-effort browser-side cleanup to prevent state leaks.

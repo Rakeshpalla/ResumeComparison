@@ -585,7 +585,7 @@ export default function ComparePage() {
     async function poll() {
       try {
         const response = await fetch(`/api/sessions/${sessionId}/compare`, { cache: "no-store" });
-        if (response.status === 401) { window.location.href = "/login"; return; }
+        if (response.status === 401) { window.location.href = process.env.NEXT_PUBLIC_REQUIRE_LOGIN === "true" ? "/login" : "/upload"; return; }
         if (!response.ok) { const body = await response.json(); throw new Error(body.error || "Failed to load."); }
         const payload = (await response.json()) as ComparisonResponse;
         if (!active) return;
@@ -631,7 +631,7 @@ export default function ComparePage() {
         const response = jd.length > 0
           ? await fetch(`/api/sessions/${sessionId}/hiring-ui?lens=hiring`, { method: "POST", cache: "no-store", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ jdText: jd }) })
           : await fetch(`/api/sessions/${sessionId}/hiring-ui?lens=hiring`, { cache: "no-store" });
-        if (response.status === 401) { window.location.href = "/login"; return; }
+        if (response.status === 401) { window.location.href = process.env.NEXT_PUBLIC_REQUIRE_LOGIN === "true" ? "/login" : "/upload"; return; }
         if (!response.ok) { setHiringUi(null); return; }
         if (!active) return;
         setHiringUi((await response.json()) as HiringUiResponse);
@@ -656,7 +656,7 @@ export default function ComparePage() {
         const response = ctx.length > 0
           ? await fetch(url, { method: "POST", cache: "no-store", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contextText: ctx }) })
           : await fetch(url, { cache: "no-store" });
-        if (response.status === 401) { window.location.href = "/login"; return; }
+        if (response.status === 401) { window.location.href = process.env.NEXT_PUBLIC_REQUIRE_LOGIN === "true" ? "/login" : "/upload"; return; }
         if (!response.ok) { setRankUi(null); return; }
         if (!active) return;
         const payload = (await response.json()) as RankResponse;
@@ -679,7 +679,7 @@ export default function ComparePage() {
       const response = jd.length > 0
         ? await fetch(url, { method: "POST", cache: "no-store", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ jdText: jd }) })
         : await fetch(url, { cache: "no-store" });
-      if (response.status === 401) { window.location.href = "/login"; return; }
+      if (response.status === 401) { window.location.href = process.env.NEXT_PUBLIC_REQUIRE_LOGIN === "true" ? "/login" : "/upload"; return; }
       if (!response.ok) {
         const j = (await response.json().catch(() => null)) as { error?: string } | null;
         setExportError(j?.error || `Export failed (HTTP ${response.status}).`); return;

@@ -105,11 +105,19 @@ export default function UploadPage() {
 
     setStatus("uploading");
     try {
-      const sessionResponse = await fetch("/api/sessions", {
-        method: "POST"
-      });
+      let sessionResponse = await fetch("/api/sessions", { method: "POST", credentials: "include" });
       if (sessionResponse.status === 401) {
-        window.location.href = "/login";
+        const guestRes = await fetch("/api/auth/guest", { method: "POST", credentials: "include" });
+        if (!guestRes.ok) {
+          setError("Unable to start session. Please try again.");
+          setStatus("error");
+          return false;
+        }
+        sessionResponse = await fetch("/api/sessions", { method: "POST", credentials: "include" });
+      }
+      if (sessionResponse.status === 401) {
+        setError("Session expired. Please try again.");
+        setStatus("error");
         return false;
       }
       if (!sessionResponse.ok) {
@@ -146,7 +154,7 @@ export default function UploadPage() {
           );
 
           if (uploadResponse.status === 401) {
-            window.location.href = "/login";
+            window.location.href = process.env.NEXT_PUBLIC_REQUIRE_LOGIN === "true" ? "/login" : "/upload";
             throw new Error("Unauthorized");
           }
           if (!uploadResponse.ok) {
@@ -207,7 +215,7 @@ export default function UploadPage() {
         method: "POST"
       });
       if (processResponse.status === 401) {
-        window.location.href = "/login";
+        window.location.href = process.env.NEXT_PUBLIC_REQUIRE_LOGIN === "true" ? "/login" : "/upload";
         return false;
       }
       const body = await processResponse.json().catch(() => ({}));

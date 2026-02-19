@@ -37,13 +37,22 @@ Google Analytics provides deeper insights: user journeys, custom events (uploads
 4. Click **Next** → Select **Web** → Enter your domain (e.g., `resumemaster-ten.vercel.app`)
 5. Click **Create**
 
-### Step 2: Get Your Measurement ID
+### Step 2: Set Up Data Stream
 
 1. In your new property, go to **Admin** → **Data Streams**
-2. Click your web stream
-3. Copy the **Measurement ID** (format: `G-XXXXXXXXXX`)
+2. Click **Add stream** → **Web**
+3. Fill in the form:
+   - **Website URL:** Change `http://` to `https://` and enter: `https://www.resumemaster-ten.vercel.app` (or your actual domain)
+   - **Stream name:** Enter a descriptive name like `Resume Comparison Engine` or `ResumeMaster`
+   - **Enhanced measurement:** Leave enabled (toggle ON) — this automatically tracks page views, scrolls, clicks, etc.
+4. Click **Create stream**
 
-### Step 3: Add to Vercel Environment Variables
+### Step 3: Get Your Measurement ID
+
+1. After creating the stream, you'll see your **Measurement ID** (format: `G-XXXXXXXXXX`)
+2. Copy this ID — you'll need it for the next step
+
+### Step 4: Add to Vercel Environment Variables
 
 1. Go to [Vercel Dashboard](https://vercel.com/dashboard) → Your project → **Settings** → **Environment Variables**
 2. Add:

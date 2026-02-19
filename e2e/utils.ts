@@ -23,9 +23,9 @@ export async function registerAndGoToUpload(page: Page) {
   await page.goto("/login");
   await page.getByRole("button", { name: /create an account/i }).click();
 
-  await page.getByLabel("Email").fill(email);
-  await page.getByLabel("Password").fill(password);
-  await page.getByRole("button", { name: /create account/i }).click();
+  await page.getByPlaceholder("you@company.com").fill(email);
+  await page.getByPlaceholder("••••••••").fill(password);
+  await page.getByRole("button", { name: /create your account/i }).click();
 
   await expect(page).toHaveURL(/\/upload$/);
 }

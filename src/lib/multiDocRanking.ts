@@ -7,6 +7,7 @@ import {
   type StrictDocumentInput,
   type SingleDocumentScore
 } from "./strictDecisionComparison";
+import { calculateEnhancedMetadata, type EnhancedMetadata } from "./enhancedMetadata";
 
 export type RankingContext = {
   lens: DecisionLens;
@@ -39,6 +40,8 @@ export type RankedDocument = {
     verifyQuestions: string[];
     proofRequests: string[];
   };
+  /** Optional: tie-breakers and confidence; added when enhancement is enabled. */
+  enhanced?: EnhancedMetadata;
 };
 
 const STOPWORDS = new Set(
@@ -302,12 +305,80 @@ export function assessRecommendation(params: {
   };
 }
 
-export function rankDocuments(params: {
-  lens: DecisionLens;
-  docs: StrictDocumentInput[];
-  contextText?: string;
-}): { lens: DecisionLens; dimensions: string[]; ranked: RankedDocument[]; recommendation: ReturnType<typeof assessRecommendation>; context?: RankingContext } {
+const TIE_BREAKER_THRESHOLD = 3;
+
+/**
+ * Original sort order: by total, contextFitPercent, clarity, riskHygiene, filename.
+ * Used when enhanced ranking is disabled or when tie-breaker data is missing.
+ */
+function sortScoredOriginal(
+  scored: (SingleDocumentScore & { contextFitPercent: number; matched: string[]; missing: string[] })[]
+) {
+  scored.sort((a, b) => {
+    if (b.total !== a.total) return b.total - a.total;
+    if (b.contextFitPercent !== a.contextFitPercent) return b.contextFitPercent - a.contextFitPercent;
+    if (b.clarity !== a.clarity) return b.clarity - a.clarity;
+    if (b.riskHygiene !== a.riskHygiene) return b.riskHygiene - a.riskHygiene;
+    return a.doc.filename.localeCompare(b.doc.filename);
+  });
+}
+
+/**
+ * Re-sort ranked list using tie-breakers when scores are within TIE_BREAKER_THRESHOLD.
+ * Preserves primary order by total score; only adjusts when gap <= threshold.
+ */
+const EMPTY_TIE_BREAKERS: EnhancedMetadata["tieBreakers"] = {
+  criticalSkillMatchPercentage: null,
+  experienceYears: 0,
+  quantifiedAchievementsCount: 0,
+  educationLevel: 0,
+  careerProgressionScore: 0
+};
+
+function sortRankedWithTieBreakers(ranked: RankedDocument[]): RankedDocument[] {
+  try {
+    const sorted = [...ranked].sort((a, b) => {
+      const scoreDiff = b.total - a.total;
+      if (Math.abs(scoreDiff) > TIE_BREAKER_THRESHOLD) return scoreDiff;
+
+      const aTie = a.enhanced?.tieBreakers ?? EMPTY_TIE_BREAKERS;
+      const bTie = b.enhanced?.tieBreakers ?? EMPTY_TIE_BREAKERS;
+
+      const aSkill = aTie.criticalSkillMatchPercentage ?? 0;
+      const bSkill = bTie.criticalSkillMatchPercentage ?? 0;
+      if (aSkill !== 0 || bSkill !== 0) {
+        const skillDiff = bSkill - aSkill;
+        if (Math.abs(skillDiff) > 5) return skillDiff;
+      }
+
+      const expDiff = (bTie.experienceYears ?? 0) - (aTie.experienceYears ?? 0);
+      if (Math.abs(expDiff) > 1) return expDiff;
+
+      const achievementDiff = (bTie.quantifiedAchievementsCount ?? 0) - (aTie.quantifiedAchievementsCount ?? 0);
+      if (achievementDiff !== 0) return achievementDiff;
+
+      const eduDiff = (bTie.educationLevel ?? 0) - (aTie.educationLevel ?? 0);
+      if (eduDiff !== 0) return eduDiff;
+
+      return scoreDiff !== 0 ? scoreDiff : (a.id || a.filename).localeCompare(b.id || b.filename);
+    });
+    return sorted.map((doc, idx) => ({ ...doc, rank: idx + 1 }));
+  } catch (err) {
+    console.error("Enhanced ranking failed, falling back to original order:", err);
+    return ranked;
+  }
+}
+
+export function rankDocuments(
+  params: {
+    lens: DecisionLens;
+    docs: StrictDocumentInput[];
+    contextText?: string;
+  },
+  options?: { useTieBreakers?: boolean }
+): { lens: DecisionLens; dimensions: string[]; ranked: RankedDocument[]; recommendation: ReturnType<typeof assessRecommendation>; context?: RankingContext } {
   const { lens, docs, contextText } = params;
+  const useTieBreakers = options?.useTieBreakers !== false;
   const dimensions = LENS_DIMENSIONS[lens];
   const keywords = contextText && contextText.trim().length > 0 ? extractContextKeywords({ lens, contextText }) : [];
 
@@ -322,14 +393,9 @@ export function rankDocuments(params: {
     return { ...score, contextFitPercent: fit, matched, missing };
   });
 
-  scored.sort((a, b) => {
-    if (b.total !== a.total) return b.total - a.total;
-    if (b.contextFitPercent !== a.contextFitPercent) return b.contextFitPercent - a.contextFitPercent;
-    if (b.clarity !== a.clarity) return b.clarity - a.clarity;
-    if (b.riskHygiene !== a.riskHygiene) return b.riskHygiene - a.riskHygiene;
-    return a.doc.filename.localeCompare(b.doc.filename);
-  });
+  sortScoredOriginal(scored);
 
+  const jdText = (contextText ?? "").trim();
   const ranked: RankedDocument[] = scored.map((s, idx) => {
     const weakDims = [...s.dimensions]
       .sort((a, b) => a.score - b.score)
@@ -351,6 +417,8 @@ export function rankDocuments(params: {
     });
 
     const kit = makeInterviewQuestions({ lens, missingKeywords: s.missing });
+    const combined = `${s.doc.filename}\n${s.doc.normalizedText}\n${s.doc.attributes.map((a) => a.value).join("\n")}`;
+    const enhanced = calculateEnhancedMetadata(combined, jdText);
 
     return {
       id: s.doc.id,
@@ -369,12 +437,18 @@ export function rankDocuments(params: {
         scoreReason: scoreReason(d.score, d.dimension, d.evidenceSnippet)
       })),
       risks,
-      interviewKit: kit
+      interviewKit: kit,
+      enhanced
     };
   });
 
-  const topDoc = ranked[0];
-  const secondDoc = ranked[1];
+  const rankedFinal =
+    useTieBreakers && ranked.length > 0 && ranked[0].enhanced
+      ? sortRankedWithTieBreakers(ranked)
+      : ranked;
+
+  const topDoc = rankedFinal[0];
+  const secondDoc = rankedFinal[1];
   const recommendation = assessRecommendation({
     topTotal: topDoc?.total ?? 0,
     gap: topDoc && secondDoc ? topDoc.total - secondDoc.total : 0,
@@ -385,13 +459,32 @@ export function rankDocuments(params: {
   return {
     lens,
     dimensions,
-    ranked,
+    ranked: rankedFinal,
     recommendation,
     context:
       contextText && contextText.trim().length > 0
         ? { lens, contextText: contextText.trim(), keywords }
         : undefined
   };
+}
+
+/** Original ranking only (no tie-breaker re-sort). Use for comparison or rollback. */
+export function rankDocumentsOriginal(params: {
+  lens: DecisionLens;
+  docs: StrictDocumentInput[];
+  contextText?: string;
+}) {
+  return rankDocuments(params, { useTieBreakers: false });
+}
+
+/** Used by UI to decide whether to show "Close Match Insights" card. */
+export function shouldShowCloseMatchInsights(ranked: RankedDocument[]): boolean {
+  const top = ranked.slice(0, 3);
+  if (top.length === 0) return false;
+  const scores = top.map((c) => c.total);
+  const range = Math.max(...scores) - Math.min(...scores);
+  if (range > 5) return false;
+  return top.every((c) => c.enhanced?.tieBreakers != null);
 }
 
 export function decideLensForMany(params: {

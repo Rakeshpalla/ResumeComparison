@@ -46,12 +46,12 @@ test("golden path: upload 2 docs → generate insights → view compare dashboar
   await page.getByRole("button", { name: /generate insights/i }).click();
 
   await expect(page).toHaveURL(/\/compare\//, { timeout: 120_000 });
-  await expect(page.getByRole("heading", { name: /decision dashboard/i })).toBeVisible({
+  await expect(page.getByRole("heading", { name: /resume comparison/i })).toBeVisible({
     timeout: 120_000
   });
 
   await page.reload();
-  await expect(page.getByRole("heading", { name: /decision dashboard/i })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /resume comparison/i })).toBeVisible();
 
   await assertNoConsoleErrors();
 });

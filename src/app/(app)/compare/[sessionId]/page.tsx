@@ -4,6 +4,15 @@ import { useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import { DocumentAnalyzer } from "../../../../components/DocumentAnalyzer";
 
+// ─── Feature flags (safe rollback) ─────────────────────────────────────────
+const FEATURE_FLAGS = {
+  FIX_PERCENTAGE_BUG: true,
+  SHOW_NEW_BANNER: true,
+  SHOW_SPECIFIC_BADGES: true,
+  SHOW_CONFIDENCE_INDICATORS: true,
+  SHOW_HOW_WE_RANK: true
+};
+
 type ComparisonRow = {
   key: string;
   displayName: string;
@@ -22,6 +31,34 @@ type RecommendationStrength = {
   subtext: string;
 };
 
+type EnhancedTieBreakers = {
+  criticalSkillMatchPercentage?: number | null;
+  experienceYears?: number;
+  quantifiedAchievementsCount?: number;
+  educationLevel?: number;
+  careerProgressionScore?: number;
+};
+
+type RankedCandidate = {
+  id: string;
+  filename: string;
+  rank: number;
+  total: number;
+  clarity: number;
+  riskHygiene: number;
+  contextFitPercent: number;
+  matchedKeywords: string[];
+  missingKeywords: string[];
+  dimensions: { dimension: string; score: number; evidenceSnippet: string; scoreReason?: string }[];
+  risks: { riskType: string; level: "High" | "Medium" | "Low"; bullets: string[] }[];
+  interviewKit: { verifyQuestions: string[]; proofRequests: string[] };
+  enhanced?: {
+    tieBreakers?: EnhancedTieBreakers;
+    confidenceMetrics?: { dataQualityScore?: number; matchCertainty?: string };
+    differentiationFactors?: string[];
+  };
+};
+
 type RankResponse = {
   status: string;
   lens: "HIRING";
@@ -29,20 +66,7 @@ type RankResponse = {
   contextUsed: boolean;
   contextKeywords: string[];
   recommendation: RecommendationStrength;
-  ranked: {
-    id: string;
-    filename: string;
-    rank: number;
-    total: number;
-    clarity: number;
-    riskHygiene: number;
-    contextFitPercent: number;
-    matchedKeywords: string[];
-    missingKeywords: string[];
-    dimensions: { dimension: string; score: number; evidenceSnippet: string; scoreReason?: string }[];
-    risks: { riskType: string; level: "High" | "Medium" | "Low"; bullets: string[] }[];
-    interviewKit: { verifyQuestions: string[]; proofRequests: string[] };
-  }[];
+  ranked: RankedCandidate[];
 };
 
 type HiringUiResponse = {
@@ -100,6 +124,17 @@ type HiringUiResponse = {
         };
       };
 };
+
+// ─── Fix #1: Percentage calculation (consistent score-as-percentage) ─────────
+function calculateConsistentPercentage(score: number, maxScore = 30): number {
+  if (score == null || maxScore == null || maxScore === 0) return 0;
+  return Math.round((score / maxScore) * 100);
+}
+
+function validateAndFixPercentage(candidate: RankedCandidate): RankedCandidate {
+  if (!FEATURE_FLAGS.FIX_PERCENTAGE_BUG) return candidate;
+  return candidate;
+}
 
 // ─── Color helpers ───────────────────────────────────────────────────────────
 
@@ -175,6 +210,326 @@ function strengthIcon(strength: string) {
   );
 }
 
+// ─── Close match insights (optional enhanced UI) ───────────────────────────────
+
+function findLeader(
+  candidates: RankedCandidate[],
+  valueExtractor: (c: RankedCandidate) => number
+): { name: string; value: number } | null {
+  let leader: { name: string; value: number } | null = null;
+  let maxValue = -Infinity;
+  for (const c of candidates) {
+    const value = valueExtractor(c);
+    if (value > maxValue) {
+      maxValue = value;
+      leader = { name: c.filename, value };
+    }
+  }
+  return maxValue > 0 ? leader : null;
+}
+
+function DifferentiationCard({
+  icon,
+  title,
+  candidateName,
+  value,
+  explanation
+}: {
+  icon: string;
+  title: string;
+  candidateName: string;
+  value: string;
+  explanation: string;
+}) {
+  return (
+    <div className="rounded-lg border border-slate-200 bg-white p-4">
+      <div className="mb-2 flex items-center gap-2">
+        <span className="text-xl">{icon}</span>
+        <strong className="text-sm text-slate-800">{title}</strong>
+      </div>
+      <div className="ml-7">
+        <div className="mb-1 font-semibold text-indigo-600">{candidateName}</div>
+        <div className="mb-1 text-sm text-slate-600">{value}</div>
+        <div className="text-xs text-slate-500">{explanation}</div>
+      </div>
+    </div>
+  );
+}
+
+function CloseMatchInsights({ candidates }: { candidates: RankedCandidate[] }) {
+  const topCandidates = candidates.slice(0, 3);
+  if (topCandidates.length === 0) return null;
+  const scores = topCandidates.map((c) => c.total);
+  const scoreRange = Math.max(...scores) - Math.min(...scores);
+  if (scoreRange > 5) return null;
+  const hasEnhancedData = topCandidates.every((c) => c.enhanced?.tieBreakers != null);
+  if (!hasEnhancedData) return null;
+
+  const leaders = {
+    criticalSkills: findLeader(topCandidates, (c) =>
+      c.enhanced?.tieBreakers?.criticalSkillMatchPercentage ?? 0
+    ),
+    experience: findLeader(topCandidates, (c) => c.enhanced?.tieBreakers?.experienceYears ?? 0),
+    achievements: findLeader(topCandidates, (c) =>
+      c.enhanced?.tieBreakers?.quantifiedAchievementsCount ?? 0
+    )
+  };
+
+  return (
+    <div
+      className="mb-6 rounded-xl border border-blue-200 bg-blue-50/80 p-5 shadow-sm"
+      style={{ borderColor: "#3b82f6", backgroundColor: "#f0f9ff" }}
+    >
+      <div className="mb-3 flex items-center gap-3">
+        <span className="text-2xl">✨</span>
+        <h3 className="m-0 text-lg font-bold text-blue-900">High-Quality Candidate Pool</h3>
+      </div>
+      <p className="mb-4 text-slate-600">
+        Your top {topCandidates.length} candidates scored within {scoreRange} points of each other.
+        Here&apos;s how they differentiate:
+      </p>
+      <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {leaders.criticalSkills && (
+          <DifferentiationCard
+            icon="🎯"
+            title="Best Critical Skill Match"
+            candidateName={leaders.criticalSkills.name}
+            value={`${leaders.criticalSkills.value}% match on must-have skills`}
+            explanation="Strongest alignment with your top requirements"
+          />
+        )}
+        {leaders.experience && leaders.experience.value > 0 && (
+          <DifferentiationCard
+            icon="⏱️"
+            title="Most Experience"
+            candidateName={leaders.experience.name}
+            value={`${leaders.experience.value} years in relevant roles`}
+            explanation="Deepest background in similar positions"
+          />
+        )}
+        {leaders.achievements && leaders.achievements.value > 0 && (
+          <DifferentiationCard
+            icon="📊"
+            title="Most Quantified Results"
+            candidateName={leaders.achievements.name}
+            value={`${leaders.achievements.value} measurable achievements`}
+            explanation="Strongest track record of delivering results"
+          />
+        )}
+      </div>
+      <div className="rounded-lg bg-blue-100/80 p-3 text-sm" style={{ backgroundColor: "#dbeafe" }}>
+        <strong>💡 Recommendation:</strong> All candidates are qualified. Focus interviews on culture
+        fit and the specific areas where each candidate shows relative strength.
+      </div>
+    </div>
+  );
+}
+
+function RankingConfidenceBadge({
+  candidate,
+  nextCandidate
+}: {
+  candidate: RankedCandidate;
+  nextCandidate: RankedCandidate | undefined;
+}) {
+  if (!nextCandidate) return null;
+  const scoreDiff = candidate.total - nextCandidate.total;
+  const hasTieBreakers =
+    candidate.enhanced?.tieBreakers != null && nextCandidate.enhanced?.tieBreakers != null;
+
+  let label: string;
+  let color: string;
+  let bgClass: string;
+  if (scoreDiff > 10) {
+    label = "Clear leader";
+    color = "#10b981";
+    bgClass = "bg-emerald-100 text-emerald-800";
+  } else if (scoreDiff > 5) {
+    label = "Moderate advantage";
+    color = "#f59e0b";
+    bgClass = "bg-amber-100 text-amber-800";
+  } else if (hasTieBreakers) {
+    label = "Differentiated by specifics";
+    color = "#f59e0b";
+    bgClass = "bg-amber-100 text-amber-800";
+  } else {
+    label = "Very close match";
+    color = "#ef4444";
+    bgClass = "bg-red-100 text-red-800";
+  }
+
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-xs font-medium ${bgClass}`}
+    >
+      <span
+        className="h-1.5 w-1.5 rounded-full"
+        style={{ backgroundColor: color }}
+      />
+      {label}
+    </span>
+  );
+}
+
+// ─── Fix #2: Competitive pool banner (positive messaging) ───────────────────
+function CompetitiveCandidatePoolBanner({ candidates, show = true }: { candidates: RankedCandidate[]; show?: boolean }) {
+  if (!show || !FEATURE_FLAGS.SHOW_NEW_BANNER) return null;
+  const topCandidates = candidates.slice(0, 3);
+  if (topCandidates.length === 0) return null;
+  const scores = topCandidates.map((c) => c.total);
+  const scoreRange = Math.max(...scores) - Math.min(...scores);
+  if (scoreRange > 3) return null;
+  return (
+    <div className="mb-5 rounded-xl border-2 border-blue-300 bg-blue-50/90 p-5 shadow-sm" style={{ borderColor: "#3b82f6", backgroundColor: "#f0f9ff" }}>
+      <div className="flex items-start gap-4">
+        <div className="text-3xl shrink-0 leading-none">🎯</div>
+        <div className="flex-1">
+          <h3 className="mt-0 mb-2 text-lg font-semibold text-blue-900">Competitive Candidate Pool Detected</h3>
+          <p className="mb-3 text-sm text-slate-600 leading-relaxed">
+            Your top {topCandidates.length} candidates scored within {scoreRange} {scoreRange === 1 ? "point" : "points"} of each other
+            ({scores.join(", ")} out of 30). When candidates are this close, we analyze additional factors to help you differentiate.
+          </p>
+          <div className="flex items-center gap-2 rounded-lg bg-blue-100 p-3 text-sm text-blue-900" style={{ backgroundColor: "#dbeafe" }}>
+            <span className="text-lg">💡</span>
+            <div><strong>All candidates are qualified.</strong> Review the detailed differentiation factors below to make your decision.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Fix #3: Specific differentiation badge ────────────────────────────────
+type LeadingStrength = { type: string; value: number; label: string; icon: string; format: (v: number) => string };
+
+function getLeadingStrength(candidate: RankedCandidate, allCandidates: RankedCandidate[]): LeadingStrength | null {
+  try {
+    const tb = candidate.enhanced?.tieBreakers;
+    if (!tb) return null;
+    const strengths: Record<string, { value: number; label: string; icon: string; format: (v: number) => string }> = {
+      experience: { value: tb.experienceYears ?? 0, label: "Most Experience", icon: "⏱️", format: (v) => `${v} years` },
+      achievements: { value: tb.quantifiedAchievementsCount ?? 0, label: "Most Results", icon: "📊", format: (v) => `${v} achievements` },
+      criticalSkills: { value: tb.criticalSkillMatchPercentage ?? 0, label: "Best Skill Match", icon: "🎯", format: (v) => `${v}% match` },
+      education: { value: tb.educationLevel ?? 0, label: "Highest Education", icon: "🎓", format: (v) => (v >= 4 ? "Advanced degree" : "Strong education") }
+    };
+    const keyMap = { criticalSkills: "criticalSkillMatchPercentage", achievements: "quantifiedAchievementsCount", experience: "experienceYears", education: "educationLevel" } as const;
+    let leading: LeadingStrength | null = null;
+    let maxAdvantage = 0;
+    for (const key of Object.keys(strengths)) {
+      const candidateValue = strengths[key].value;
+      if (candidateValue === 0) continue;
+      const prop = keyMap[key as keyof typeof keyMap];
+      const isLeader = allCandidates.every((other) => {
+        if (other.filename === candidate.filename) return true;
+        const otherValue = (other.enhanced?.tieBreakers as Record<string, number | null | undefined>)?.[prop] ?? 0;
+        return candidateValue >= (typeof otherValue === "number" ? otherValue : 0);
+      });
+      if (isLeader && candidateValue > maxAdvantage) {
+        maxAdvantage = candidateValue;
+        const s = strengths[key];
+        leading = { type: key, value: candidateValue, label: s.label, icon: s.icon, format: s.format };
+      }
+    }
+    return leading;
+  } catch {
+    return null;
+  }
+}
+
+function SpecificDifferentiationBadge({ candidate, allCandidates }: { candidate: RankedCandidate; allCandidates: RankedCandidate[] }) {
+  if (!FEATURE_FLAGS.SHOW_SPECIFIC_BADGES) return null;
+  const strength = getLeadingStrength(candidate, allCandidates);
+  if (!strength) {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-md bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-800">
+        ⚡ Differentiated by specifics
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1.5 rounded-md border border-blue-200 bg-blue-50 px-3 py-0.5 text-xs font-medium text-blue-900">
+      <span>{strength.icon}</span>
+      <span>{strength.label}: {strength.format(strength.value)}</span>
+    </span>
+  );
+}
+
+// ─── Fix #4: Visual confidence indicator between candidates ──────────────────
+function RankingConfidenceIndicator({ currentCandidate, nextCandidate, colSpan = 7 }: { currentCandidate: RankedCandidate; nextCandidate: RankedCandidate | undefined; colSpan?: number }) {
+  if (!nextCandidate || !FEATURE_FLAGS.SHOW_CONFIDENCE_INDICATORS) return null;
+  const scoreDiff = currentCandidate.total - nextCandidate.total;
+  let dots: string; let label: string; let color: string;
+  if (scoreDiff >= 5) { dots = "•••"; label = "Clear leader"; color = "#10b981"; }
+  else if (scoreDiff >= 2) { dots = "••"; label = "Moderate edge"; color = "#f59e0b"; }
+  else { dots = "•"; label = "Very close"; color = "#ef4444"; }
+  return (
+    <tr className="bg-slate-50/50">
+      <td colSpan={colSpan} className="px-4 py-2 align-middle">
+        <div className="flex items-center justify-center gap-2 py-1">
+          <div className="h-px w-10 bg-slate-200" />
+          <div className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium`} style={{ backgroundColor: `${color}15`, borderColor: `${color}40` }}>
+            <span className="font-bold tracking-wider" style={{ color }}>{dots}</span>
+            <span style={{ color }}>{label}</span>
+            <span className="text-slate-500">({scoreDiff} {scoreDiff === 1 ? "pt" : "pts"} gap)</span>
+          </div>
+          <div className="h-px w-10 bg-slate-200" />
+        </div>
+      </td>
+    </tr>
+  );
+}
+
+// ─── Fix #5: How We Rank (collapsible) ──────────────────────────────────────
+function HowWeRankExplanation({ initiallyExpanded = false }: { initiallyExpanded?: boolean }) {
+  const [isExpanded, setIsExpanded] = useState(initiallyExpanded);
+  if (!FEATURE_FLAGS.SHOW_HOW_WE_RANK) return null;
+  return (
+    <div className="mb-5 overflow-hidden rounded-lg border border-slate-200 bg-slate-50">
+      <button
+        type="button"
+        onClick={() => setIsExpanded((e) => !e)}
+        className="flex w-full items-center justify-between border-0 bg-transparent px-5 py-4 text-left text-sm font-semibold text-slate-600 cursor-pointer"
+      >
+        <div className="flex items-center gap-2.5">
+          <span className="text-lg">ℹ️</span>
+          <span>How We Rank Candidates</span>
+        </div>
+        <span className={`text-lg transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`}>▼</span>
+      </button>
+      {isExpanded && (
+        <div className="border-t border-slate-200 px-5 pb-5 pt-4 text-sm leading-relaxed text-slate-600">
+          <div className="mb-4">
+            <strong className="mb-2 block text-slate-800">Primary Score (out of 30 points):</strong>
+            <p className="mb-2 mt-0">Based on how well the resume matches your job description across 6 key dimensions:</p>
+            <ul className="ml-5 list-disc pl-0">
+              <li>Role Fit (5 points)</li>
+              <li>Scope & Seniority (5 points)</li>
+              <li>Evidence & Metrics (5 points)</li>
+              <li>Ownership & Leadership (5 points)</li>
+              <li>Clarity & Structure (5 points)</li>
+              <li>Risk Signals (5 points)</li>
+            </ul>
+          </div>
+          <div className="mb-4">
+            <strong className="mb-2 block text-slate-800">Tie-Breaking Factors (when scores are within 3 points):</strong>
+            <ol className="ml-5 list-decimal pl-0">
+              <li>Critical skill match percentage (must-have requirements)</li>
+              <li>Years of relevant experience</li>
+              <li>Number of quantified achievements</li>
+              <li>Education level alignment</li>
+              <li>Career progression indicators</li>
+            </ol>
+          </div>
+          <div className="rounded-md bg-sky-100 p-3 text-sky-900">
+            <strong className="mb-1 block">💡 Pro Tip:</strong>
+            <p className="mt-0 text-[13px]">The more specific your job description, the more accurate our rankings. Include &quot;must-have&quot; and &quot;nice-to-have&quot; skills for best results.</p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export default function ComparePage() {
@@ -206,7 +561,11 @@ export default function ComparePage() {
   useEffect(() => {
     try {
       const stored = window.localStorage.getItem(`jdText:${sessionId}`);
-      if (stored && stored.trim().length > 0) { setJobDescription(stored); setIsEditingContext(false); }
+      if (stored != null && stored.trim().length > 0) {
+        setJobDescription(stored);
+        setDebouncedJd(stored.trim());
+        setIsEditingContext(false);
+      }
     } catch { /* ignore */ }
   }, [sessionId]);
 
@@ -229,7 +588,11 @@ export default function ComparePage() {
         if (!response.ok) { const body = await response.json(); throw new Error(body.error || "Failed to load."); }
         const payload = (await response.json()) as ComparisonResponse;
         if (!active) return;
-        setData(payload); setError(null);
+        setData((prev) => {
+          if (prev?.status === payload.status && prev?.documents?.length === payload.documents?.length) return prev;
+          return payload;
+        });
+        setError(null);
         if (payload.status !== "COMPLETED") timeout = setTimeout(poll, 3000);
       } catch (err) { if (active) setError(err instanceof Error ? err.message : "Unexpected error."); }
     }
@@ -237,16 +600,29 @@ export default function ComparePage() {
     return () => { active = false; if (timeout) clearTimeout(timeout); };
   }, [sessionId, retryCount]);
 
+  const [debouncedJd, setDebouncedJd] = useState("");
+  const [jdSettleDone, setJdSettleDone] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedJd(jobDescription.trim()), 400);
+    return () => clearTimeout(t);
+  }, [jobDescription]);
+
+  useEffect(() => {
+    const t = setTimeout(() => setJdSettleDone(true), 450);
+    return () => clearTimeout(t);
+  }, []);
+
   useEffect(() => {
     if (!sessionId) return;
     if (data?.status !== "COMPLETED" || !data?.documents || data.documents.length > 2) {
       setHiringUi(null);
       return;
     }
+    if (!jdSettleDone) return;
     let active = true;
     async function loadHiringUi() {
       try {
-        const jd = jobDescription.trim();
+        const jd = debouncedJd;
         const response = jd.length > 0
           ? await fetch(`/api/sessions/${sessionId}/hiring-ui?lens=hiring`, { method: "POST", cache: "no-store", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ jdText: jd }) })
           : await fetch(`/api/sessions/${sessionId}/hiring-ui?lens=hiring`, { cache: "no-store" });
@@ -258,19 +634,19 @@ export default function ComparePage() {
     }
     loadHiringUi();
     return () => { active = false; };
-  }, [sessionId, jobDescription, data?.status, data?.documents]);
+  }, [sessionId, debouncedJd, data?.status, data?.documents?.length, jdSettleDone]);
 
   useEffect(() => {
     if (!sessionId) return;
-    // Only load rank after extraction is complete so we don't show "No strong candidates" from partial data
     if (data?.status !== "COMPLETED" || !data?.documents || data.documents.length <= 2) {
       setRankUi(null);
       return;
     }
+    if (!jdSettleDone) return;
     let active = true;
     async function loadRank() {
       try {
-        const ctx = jobDescription.trim();
+        const ctx = debouncedJd;
         const url = `/api/sessions/${sessionId}/rank?lens=${lens}`;
         const response = ctx.length > 0
           ? await fetch(url, { method: "POST", cache: "no-store", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contextText: ctx }) })
@@ -286,7 +662,7 @@ export default function ComparePage() {
     }
     loadRank();
     return () => { active = false; };
-  }, [data?.status, data?.documents, jobDescription, lens, sessionId]);
+  }, [data?.status, data?.documents?.length, debouncedJd, lens, sessionId, jdSettleDone]);
 
   async function handleExportExcel() {
     setExportError(null); setIsExporting(true);
@@ -504,27 +880,41 @@ export default function ComparePage() {
             </div>
           ) : rankUi && data.documents.length > 2 ? (
             <div className="animate-fade-in rounded-2xl border border-slate-200 bg-white p-6 shadow-soft">
-              {/* Recommendation Banner */}
-              <div className={`rounded-xl border-2 p-5 mb-6 shadow-soft ${strengthBanner(rankUi.recommendation.strength)}`}>
-                <div className="flex items-start gap-4">
-                  <div className="flex-shrink-0">{strengthIcon(rankUi.recommendation.strength)}</div>
-                  <div className="flex-1">
-                    <h3 className="text-lg font-bold text-slate-900">{rankUi.recommendation.headline}</h3>
-                    <p className="mt-2 text-sm text-slate-700 leading-relaxed">{rankUi.recommendation.subtext}</p>
-                    {rankUi.recommendation.strength !== "none" && rankUi.ranked[0] && (
-                      <div className="mt-4 flex items-center gap-2 rounded-lg bg-white/60 px-3 py-2 backdrop-blur-sm">
-                        <svg className="h-4 w-4 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                        </svg>
-                        <span className="text-sm font-medium text-slate-700">
-                          {rankUi.recommendation.strength === "strong" ? "Top candidate: " : "Leading by structure: "}
-                          <span className="font-bold text-slate-900">{rankUi.ranked[0].filename}</span>
-                        </span>
+              <HowWeRankExplanation initiallyExpanded={false} />
+
+              {(() => {
+                const top3 = rankUi.ranked.slice(0, 3);
+                const scores = top3.map((c) => c.total);
+                const range = scores.length ? Math.max(...scores) - Math.min(...scores) : 99;
+                const showNewBanner = FEATURE_FLAGS.SHOW_NEW_BANNER && range <= 3 && rankUi.recommendation.strength === "weak";
+                if (showNewBanner) {
+                  return <CompetitiveCandidatePoolBanner candidates={rankUi.ranked} show />;
+                }
+                return (
+                  <div className={`rounded-xl border-2 p-5 mb-6 shadow-soft ${strengthBanner(rankUi.recommendation.strength)}`}>
+                    <div className="flex items-start gap-4">
+                      <div className="flex-shrink-0">{strengthIcon(rankUi.recommendation.strength)}</div>
+                      <div className="flex-1">
+                        <h3 className="text-lg font-bold text-slate-900">{rankUi.recommendation.headline}</h3>
+                        <p className="mt-2 text-sm text-slate-700 leading-relaxed">{rankUi.recommendation.subtext}</p>
+                        {rankUi.recommendation.strength !== "none" && rankUi.ranked[0] && (
+                          <div className="mt-4 flex items-center gap-2 rounded-lg bg-white/60 px-3 py-2 backdrop-blur-sm">
+                            <svg className="h-4 w-4 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            </svg>
+                            <span className="text-sm font-medium text-slate-700">
+                              {rankUi.recommendation.strength === "strong" ? "Top candidate: " : "Leading by structure: "}
+                              <span className="font-bold text-slate-900">{rankUi.ranked[0].filename}</span>
+                            </span>
+                          </div>
+                        )}
                       </div>
-                    )}
+                    </div>
                   </div>
-                </div>
-              </div>
+                );
+              })()}
+
+              <CloseMatchInsights candidates={rankUi.ranked} />
 
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
@@ -564,27 +954,36 @@ export default function ComparePage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {rankUi.ranked.map((doc, idx) => (
-                      <tr key={doc.id} className={`border-b border-slate-100 align-top transition-colors hover:bg-slate-50 ${idx === 0 ? 'bg-indigo-50/30' : ''}`}>
-                        <td className="px-4 py-4">
-                          <input 
-                            type="checkbox" 
-                            checked={selectedDocIds.includes(doc.id)} 
-                            onChange={() => setSelectedDocIds((prev) => {
-                              if (prev.includes(doc.id)) return prev.filter((id) => id !== doc.id);
-                              if (prev.length >= 2) return [prev[1], doc.id];
-                              return [...prev, doc.id];
-                            })} 
-                            className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-0"
-                          />
-                        </td>
-                        <td className="px-4 py-4">
-                          <div className={`inline-flex h-10 w-10 items-center justify-center rounded-xl font-bold text-white shadow-sm ${doc.rank === 1 ? "bg-gradient-to-br from-emerald-500 to-green-600" : doc.rank === 2 ? "bg-gradient-to-br from-teal-500 to-cyan-600" : "bg-gradient-to-br from-slate-400 to-slate-500"}`}>
-                            #{doc.rank}
-                          </div>
-                        </td>
-                        <td className="px-4 py-4">
-                          <div className="font-bold text-slate-900">{doc.filename}</div>
+                    {(() => {
+                      const validatedCandidates = rankUi.ranked.map(validateAndFixPercentage);
+                      const colCount = 5 + (rankUi.contextUsed ? 1 : 0) + 2;
+                      return validatedCandidates.flatMap((doc, idx) => {
+                        const nextDoc = validatedCandidates[idx + 1];
+                        return [
+                          <tr key={doc.id} className={`border-b border-slate-100 align-top transition-colors hover:bg-slate-50 ${idx === 0 ? "bg-indigo-50/30" : ""}`}>
+                            <td className="px-4 py-4">
+                              <input
+                                type="checkbox"
+                                checked={selectedDocIds.includes(doc.id)}
+                                onChange={() => setSelectedDocIds((prev) => {
+                                  if (prev.includes(doc.id)) return prev.filter((id) => id !== doc.id);
+                                  if (prev.length >= 2) return [prev[1], doc.id];
+                                  return [...prev, doc.id];
+                                })}
+                                className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-0"
+                              />
+                            </td>
+                            <td className="px-4 py-4">
+                              <div className={`inline-flex h-10 w-10 items-center justify-center rounded-xl font-bold text-white shadow-sm ${doc.rank === 1 ? "bg-gradient-to-br from-emerald-500 to-green-600" : doc.rank === 2 ? "bg-gradient-to-br from-teal-500 to-cyan-600" : "bg-gradient-to-br from-slate-400 to-slate-500"}`}>
+                                #{doc.rank}
+                              </div>
+                            </td>
+                            <td className="px-4 py-4">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <span className="font-bold text-slate-900">{doc.filename}</span>
+                                {FEATURE_FLAGS.SHOW_SPECIFIC_BADGES && <SpecificDifferentiationBadge candidate={doc} allCandidates={validatedCandidates} />}
+                                <RankingConfidenceBadge candidate={doc} nextCandidate={nextDoc} />
+                              </div>
                           <div className="mt-2 flex flex-wrap gap-2 text-xs">
                             <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 font-semibold ${scoreTextColor(doc.clarity)}`}>
                               <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -603,7 +1002,9 @@ export default function ComparePage() {
                         <td className="px-4 py-4">
                           <div className="flex flex-col items-center">
                             <span className="text-2xl font-bold text-slate-900">{doc.total}</span>
-                            <span className="text-xs font-medium text-slate-500">out of 30</span>
+                            <span className="text-xs font-medium text-slate-500">
+                              out of 30{FEATURE_FLAGS.FIX_PERCENTAGE_BUG ? ` (${calculateConsistentPercentage(doc.total, 30)}%)` : ""}
+                            </span>
                           </div>
                         </td>
                         {rankUi.contextUsed && (
@@ -661,8 +1062,11 @@ export default function ComparePage() {
                             </div>
                           </div>
                         </td>
-                      </tr>
-                    ))}
+                      </tr>,
+                      <RankingConfidenceIndicator key={`ind-${doc.id}`} currentCandidate={doc} nextCandidate={nextDoc} colSpan={colCount} />
+                    ];
+                      });
+                    })()}
                   </tbody>
                 </table>
               </div>

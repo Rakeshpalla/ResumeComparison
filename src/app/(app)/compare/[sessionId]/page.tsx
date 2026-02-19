@@ -698,6 +698,16 @@ export default function ComparePage() {
 
   const hasJd = jobDescription.trim().split(/\s+/).filter((w) => w.length >= 2).length >= 2;
 
+  type JdStatus = "none" | "limited" | "adequate";
+  function getJdStatus(text: string): JdStatus {
+    const t = text.trim();
+    if (t.length === 0) return "none";
+    const sentences = t.split(/[.!?]+/).map((s) => s.trim()).filter(Boolean);
+    if (sentences.length < 2) return "limited";
+    return "adequate";
+  }
+  const jdStatus = getJdStatus(jobDescription);
+
   return (
     <div className="flex flex-col gap-6">
       {/* Header */}
@@ -711,20 +721,23 @@ export default function ComparePage() {
         {/* Export Excel / CSV buttons hidden until export flows work as expected */}
       </div>
 
-      {/* No-JD Warning */}
-      {!hasJd && (
-        <div className="animate-fade-in rounded-xl border-2 border-blue-300 bg-gradient-to-br from-blue-50 to-indigo-50 p-5 shadow-soft">
+      {/* Job description status: none or limited */}
+      {(jdStatus === "none" || jdStatus === "limited") && (
+        <div className={`animate-fade-in rounded-xl border-2 p-5 shadow-soft ${jdStatus === "none" ? "border-blue-300 bg-gradient-to-br from-blue-50 to-indigo-50" : "border-amber-200 bg-gradient-to-br from-amber-50 to-yellow-50"}`}>
           <div className="flex items-start gap-4">
-            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-blue-100">
-              <svg className="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg ${jdStatus === "none" ? "bg-blue-100" : "bg-amber-100"}`}>
+              <svg className={jdStatus === "none" ? "h-6 w-6 text-blue-600" : "h-6 w-6 text-amber-600"} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
             <div className="flex-1">
-              <div className="font-bold text-blue-900">No job description provided</div>
-              <div className="mt-1 text-sm text-blue-800">
-                Results compare <strong>resume quality only</strong> (structure, metrics, ownership) — not job fit.
-                Add a job description below for better insights.
+              <div className={`font-bold ${jdStatus === "none" ? "text-blue-900" : "text-amber-900"}`}>
+                {jdStatus === "none" ? "No job description provided" : "Limited job description provided"}
+              </div>
+              <div className={`mt-1 text-sm ${jdStatus === "none" ? "text-blue-800" : "text-amber-800"}`}>
+                {jdStatus === "none"
+                  ? "Results are based on resume quality only (structure, metrics, ownership) — not role fit. Add a job description below for keyword matching and role-fit insights."
+                  : "You’ve added some context, but more detail will improve results. Add at least two sentences with required skills, responsibilities, or must-haves for better keyword matching and role-fit analysis."}
               </div>
             </div>
           </div>
@@ -926,17 +939,13 @@ export default function ComparePage() {
                       {rankUi.documentCount} Candidates Analyzed
                     </p>
                     <p className="text-xs text-slate-600">
-                      {rankUi.contextUsed ? `JD Keywords: ${rankUi.contextKeywords.slice(0, 4).join(", ")}${rankUi.contextKeywords.length > 4 ? "..." : ""}` : "Resume quality comparison (no JD provided)"}
+                      {rankUi.contextUsed
+                        ? jdStatus === "limited"
+                          ? "Limited job description provided. JD keywords used for fit; add more detail for better matching."
+                          : `JD Keywords: ${rankUi.contextKeywords.slice(0, 4).join(", ")}${rankUi.contextKeywords.length > 4 ? "..." : ""}`
+                        : "No job description provided. Results based on resume quality only."}
                     </p>
                   </div>
-                </div>
-                <div className="flex items-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm">
-                  <svg className="h-4 w-4 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                  </svg>
-                  <span className="font-semibold text-indigo-900">
-                    Select <span className="text-indigo-600">2</span> candidates for detailed comparison
-                  </span>
                 </div>
               </div>
 
@@ -944,7 +953,6 @@ export default function ComparePage() {
                 <table className="w-full border-collapse text-left text-sm">
                   <thead className="bg-gradient-to-r from-slate-50 to-slate-100">
                     <tr className="border-b border-slate-200">
-                      <th className="px-4 py-3 font-bold text-slate-700">Select</th>
                       <th className="px-4 py-3 font-bold text-slate-700">Rank</th>
                       <th className="px-4 py-3 font-bold text-slate-700">Candidate</th>
                       <th className="px-4 py-3 font-bold text-slate-700">Total</th>
@@ -956,23 +964,11 @@ export default function ComparePage() {
                   <tbody>
                     {(() => {
                       const validatedCandidates = rankUi.ranked.map(validateAndFixPercentage);
-                      const colCount = 5 + (rankUi.contextUsed ? 1 : 0) + 2;
+                      const colCount = 4 + (rankUi.contextUsed ? 1 : 0) + 2;
                       return validatedCandidates.flatMap((doc, idx) => {
                         const nextDoc = validatedCandidates[idx + 1];
                         return [
                           <tr key={doc.id} className={`border-b border-slate-100 align-top transition-colors hover:bg-slate-50 ${idx === 0 ? "bg-indigo-50/30" : ""}`}>
-                            <td className="px-4 py-4">
-                              <input
-                                type="checkbox"
-                                checked={selectedDocIds.includes(doc.id)}
-                                onChange={() => setSelectedDocIds((prev) => {
-                                  if (prev.includes(doc.id)) return prev.filter((id) => id !== doc.id);
-                                  if (prev.length >= 2) return [prev[1], doc.id];
-                                  return [...prev, doc.id];
-                                })}
-                                className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-0"
-                              />
-                            </td>
                             <td className="px-4 py-4">
                               <div className={`inline-flex h-10 w-10 items-center justify-center rounded-xl font-bold text-white shadow-sm ${doc.rank === 1 ? "bg-gradient-to-br from-emerald-500 to-green-600" : doc.rank === 2 ? "bg-gradient-to-br from-teal-500 to-cyan-600" : "bg-gradient-to-br from-slate-400 to-slate-500"}`}>
                                 #{doc.rank}
@@ -1133,7 +1129,15 @@ export default function ComparePage() {
 
                       {/* Score snapshot */}
                       <div className="mt-5 rounded border border-slate-200 p-4">
-                        <div className="text-sm font-semibold text-slate-900">Score comparison ({hasJd ? "resume quality + JD alignment" : "resume quality only"})</div>
+                        <div className="text-sm font-semibold text-slate-900">
+                          Score comparison (
+                          {jdStatus === "none"
+                            ? "resume quality only — no job description provided"
+                            : jdStatus === "limited"
+                              ? "resume quality + JD alignment — limited job description provided"
+                              : "resume quality + JD alignment"}
+                          )
+                        </div>
                         <div className="mt-3 grid gap-3 md:grid-cols-2">
                           {[{ label: c1Label, file: c1?.filename, total: t1 }, { label: c2Label, file: c2?.filename, total: t2 }].map((c) => {
                             const isWinner = hiringUi.verdict.winnerFilename === c.file;

@@ -25,11 +25,16 @@ function successPayload(
  */
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
+    const raw = await request.json();
+    const body = { ...raw, email: raw.email ?? "" };
     const parsed = feedbackFormSchema.safeParse(body);
     if (!parsed.success) {
-      const first = parsed.error.flatten().fieldErrors;
-      const message = Object.values(first).flat().join(" ") || "Validation failed";
+      const fieldErrors = parsed.error.flatten().fieldErrors;
+      const message =
+        Object.values(fieldErrors)
+          .flat()
+          .filter(Boolean)
+          .join(". ") || "Validation failed. Please check all required fields.";
       return NextResponse.json({ error: message }, { status: 422 });
     }
     const data = parsed.data;

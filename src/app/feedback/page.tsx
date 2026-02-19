@@ -87,7 +87,7 @@ export default function FeedbackPage() {
     try {
       const payload = {
         ...data,
-        email: data.email?.trim() || null,
+        email: data.email?.trim() || "",
         missing_other: data.missing_other || "",
         open_feedback: data.open_feedback || "",
       };

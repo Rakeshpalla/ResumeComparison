@@ -13,7 +13,7 @@ type SocialShareProps = {
 
 const defaultTitle = "Resume Comparison Engine — Compare 2-5 Resumes in Minutes";
 // Viral hook for shares on X, LinkedIn, WhatsApp, etc.
-const defaultText = "I just compared 5 resumes in under 2 minutes. This free AI tool is a game-changer for hiring. Try it →";
+const defaultText = "I just tried the Resume Comparison Engine — compare 2–5 resumes side-by-side with smart ranking. Worth a look for hiring managers.";
 
 export function SocialShare({
   url = typeof window !== "undefined" ? window.location.href : getBaseUrl(),

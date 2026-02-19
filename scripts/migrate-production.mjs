@@ -1,14 +1,11 @@
 #!/usr/bin/env node
 /**
  * Run Prisma migrations against the PRODUCTION database.
- * Loads DATABASE_URL and DIRECT_DATABASE_URL from .env.production (project root).
+ * Loads DATABASE_URL and DIRECT_DATABASE_URL from:
+ *   - .env.production (plain KEY=value), or
+ *   - .env.production.json (JSON or KEY=value lines).
  *
- * 1. Copy your Neon connection string from Vercel (Settings → Environment Variables).
- * 2. Create .env.production in the project root with:
- *    DATABASE_URL="postgresql://...?sslmode=require"
- *    DIRECT_DATABASE_URL="postgresql://...?sslmode=require"
- * 3. Run: node scripts/migrate-production.mjs
- *    Or: npm run migrate:prod
+ * Run: npm run migrate:prod
  */
 import { readFileSync, existsSync } from "fs";
 import { resolve, dirname } from "path";
@@ -18,36 +15,44 @@ import { execSync } from "child_process";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = resolve(__dirname, "..");
 const envPath = resolve(root, ".env.production");
+const envJsonPath = resolve(root, ".env.production.json");
 
-if (!existsSync(envPath)) {
-  console.error("Missing .env.production");
-  console.error("");
-  console.error("1. In Vercel: Project → Settings → Environment Variables");
-  console.error("2. Copy the value of DATABASE_URL (your Neon connection string)");
-  console.error("3. Create a file named .env.production in the project root with:");
-  console.error("");
-  console.error('   DATABASE_URL="postgresql://user:pass@host/neondb?sslmode=require"');
-  console.error('   DIRECT_DATABASE_URL="postgresql://user:pass@host/neondb?sslmode=require"');
-  console.error("");
-  console.error("4. Run again: npm run migrate:prod");
-  process.exit(1);
-}
-
-const lines = readFileSync(envPath, "utf8").split(/\r?\n/);
-for (const line of lines) {
-  const trimmed = line.trim();
-  if (!trimmed || trimmed.startsWith("#")) continue;
-  const eq = trimmed.indexOf("=");
-  if (eq === -1) continue;
-  const key = trimmed.slice(0, eq).trim();
-  const value = trimmed.slice(eq + 1).trim().replace(/^["']|["']$/g, "");
-  if (key === "DATABASE_URL" || key === "DIRECT_DATABASE_URL") {
-    process.env[key] = value;
+function loadEnvFromPath(filePath) {
+  const content = readFileSync(filePath, "utf8").trim();
+  try {
+    const parsed = JSON.parse(content);
+    if (parsed.DATABASE_URL) process.env.DATABASE_URL = parsed.DATABASE_URL;
+    if (parsed.DIRECT_DATABASE_URL) process.env.DIRECT_DATABASE_URL = parsed.DIRECT_DATABASE_URL;
+    return;
+  } catch {
+    /* not JSON, parse as KEY=value lines */
+  }
+  for (const line of content.split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#")) continue;
+    const eq = trimmed.indexOf("=");
+    if (eq === -1) continue;
+    const key = trimmed.slice(0, eq).trim();
+    const value = trimmed.slice(eq + 1).trim().replace(/^["']|["']$/g, "");
+    if (key === "DATABASE_URL" || key === "DIRECT_DATABASE_URL") {
+      process.env[key] = value;
+    }
   }
 }
 
+if (existsSync(envPath)) {
+  loadEnvFromPath(envPath);
+} else if (existsSync(envJsonPath)) {
+  loadEnvFromPath(envJsonPath);
+} else {
+  console.error("Missing .env.production or .env.production.json in project root.");
+  console.error("");
+  console.error("Add one of these with your Neon DATABASE_URL from Vercel, then run: npm run migrate:prod");
+  process.exit(1);
+}
+
 if (!process.env.DATABASE_URL) {
-  console.error(".env.production must define DATABASE_URL");
+  console.error(".env.production or .env.production.json must define DATABASE_URL");
   process.exit(1);
 }
 if (!process.env.DIRECT_DATABASE_URL) {

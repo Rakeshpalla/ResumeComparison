@@ -6,7 +6,7 @@
 export function ThankYouCard({ usefulnessRating }: { usefulnessRating: number }) {
   const tipBlock = getTipBlock(usefulnessRating);
   const shareUrl = typeof window !== "undefined" ? window.location.origin + "/feedback" : "";
-  const tweetText = `I just tried the Resume Comparison Engine — compare 2-5 resumes with AI. Worth a look for hiring managers.`;
+  const tweetText = `I just tried the Resume Comparison Engine — compare 2–5 resumes side-by-side with smart ranking. Worth a look for hiring managers.`;
   const tweetUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}&url=${encodeURIComponent(shareUrl)}`;
 
   return (

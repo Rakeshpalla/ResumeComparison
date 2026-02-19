@@ -104,7 +104,10 @@ export default function FeedbackPage() {
       const result = await res.json();
       
       // Track feedback submission
-      trackFeedback(data.role, data.would_recommend === "yes");
+      trackFeedback(
+        data.role,
+        data.would_recommend === "Definitely yes" || data.would_recommend === "Probably yes"
+      );
       
       const params = new URLSearchParams();
       if (result.usefulness_rating != null) params.set("rating", String(result.usefulness_rating));

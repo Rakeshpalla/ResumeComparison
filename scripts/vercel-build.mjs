@@ -5,6 +5,11 @@
  * If DATABASE_URL is not set (e.g. first deploy before adding env vars), use a placeholder.
  */
 import { execSync } from "child_process";
+import { fileURLToPath } from "url";
+import { resolve, dirname } from "path";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const root = resolve(__dirname, "..");
 
 if (!process.env.DATABASE_URL) {
   process.env.DATABASE_URL =
@@ -14,5 +19,11 @@ if (!process.env.DIRECT_DATABASE_URL) {
   process.env.DIRECT_DATABASE_URL = process.env.DATABASE_URL;
 }
 
-execSync("prisma generate", { stdio: "inherit" });
-execSync("next build", { stdio: "inherit" });
+const opts = { stdio: "inherit", cwd: root, shell: true };
+
+try {
+  execSync("npx prisma generate", opts);
+  execSync("npx next build", opts);
+} catch (err) {
+  process.exit(err?.status ?? 1);
+}

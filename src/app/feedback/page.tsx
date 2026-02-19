@@ -10,6 +10,7 @@ import { StepTwo } from "@/components/feedback/StepTwo";
 import { StepThree } from "@/components/feedback/StepThree";
 import { StepFour } from "@/components/feedback/StepFour";
 import { StepFive } from "@/components/feedback/StepFive";
+import { trackFeedback } from "@/lib/analytics-events";
 import Link from "next/link";
 
 const TOTAL_STEPS = 5;
@@ -101,6 +102,10 @@ export default function FeedbackPage() {
         throw new Error(body.error || body.message || `Request failed (${res.status})`);
       }
       const result = await res.json();
+      
+      // Track feedback submission
+      trackFeedback(data.role, data.would_recommend === "yes");
+      
       const params = new URLSearchParams();
       if (result.usefulness_rating != null) params.set("rating", String(result.usefulness_rating));
       window.location.href = `/feedback/thank-you?${params.toString()}`;

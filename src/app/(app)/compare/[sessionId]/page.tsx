@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import { DocumentAnalyzer } from "../../../../components/DocumentAnalyzer";
+import { trackComparison, trackExport } from "../../../../lib/analytics-events";
 
 // ─── Feature flags (safe rollback) ─────────────────────────────────────────
 const FEATURE_FLAGS = {
@@ -590,6 +591,10 @@ export default function ComparePage() {
         if (!active) return;
         setData((prev) => {
           if (prev?.status === payload.status && prev?.documents?.length === payload.documents?.length) return prev;
+          // Track comparison when it completes for the first time
+          if (prev?.status !== "COMPLETED" && payload.status === "COMPLETED" && payload.documents?.length) {
+            trackComparison(sessionId, payload.documents.length, jobDescription.trim().length > 0);
+          }
           return payload;
         });
         setError(null);
@@ -682,6 +687,9 @@ export default function ComparePage() {
       const blob = await response.blob();
       const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
       a.download = `resume-comparison-${sessionId}.xlsx`; document.body.appendChild(a); a.click(); a.remove();
+      
+      // Track export event
+      trackExport(sessionId, "xlsx");
     } catch (err) { setExportError(err instanceof Error ? err.message : "Export failed."); }
     finally { setIsExporting(false); }
   }

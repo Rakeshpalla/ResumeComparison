@@ -27,6 +27,7 @@
     "@hookform/resolvers": "^5.2.2",
     "@prisma/client": "^5.10.2",
     "@supabase/supabase-js": "^2.96.0",
+    "@vercel/analytics": "^1.6.1",
     "@vercel/blob": "^2.2.0",
     "bcryptjs": "^2.4.3",
     "file-type": "^21.3.0",

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { DocumentAnalyzer } from "../../../components/DocumentAnalyzer";
+import { trackUpload } from "../../../lib/analytics-events";
 
 type UploadStatus = "idle" | "uploading" | "processing" | "complete" | "error";
 
@@ -168,6 +169,10 @@ export default function UploadPage() {
       setCurrentUploadName(null);
       setIsUploaded(true);
       setStatus("idle");
+      
+      // Track upload event
+      trackUpload(selectedFiles.length, contextText.trim().length > 0);
+      
       return true;
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Unexpected error.";

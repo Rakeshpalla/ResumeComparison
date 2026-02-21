@@ -14,6 +14,10 @@ export const metadata = {
   }),
   metadataBase: new URL(getBaseUrl()),
   alternates: { canonical: getBaseUrl() },
+  icons: {
+    icon: "/icon.png",
+    apple: "/icon.png",
+  },
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

@@ -35,7 +35,7 @@ const TITLE_MAX_LENGTH = 60;
 const DESCRIPTION_MAX_LENGTH = 160;
 
 export function getBaseUrl(): string {
-  return process.env.NEXT_PUBLIC_APP_URL || "https://resumecomparison.vercel.app";
+  return process.env.NEXT_PUBLIC_APP_URL || "https://resumemaster-ten.vercel.app";
 }
 
 /**

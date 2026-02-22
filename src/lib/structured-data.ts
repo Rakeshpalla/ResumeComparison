@@ -1,3 +1,7 @@
+/**
+ * SEO: JSON-LD structured data (Organization, WebSite, SoftwareApplication, BreadcrumbList, FAQPage).
+ * Injected in <head> via StructuredData component for search engines and rich results.
+ */
 import { getBaseUrl } from "./metadata";
 
 const SITE_NAME = "Resume Comparison Engine";
@@ -9,7 +13,7 @@ export function organizationSchema() {
     "@type": "Organization",
     name: SITE_NAME,
     url: baseUrl,
-    description: "AI-powered resume comparison tool. Compare 2-5 resumes (PDF/DOCX) in minutes. Used by hiring managers and recruiters to shortlist candidates and reduce bias.",
+    description: "Free resume comparison tool. Compare 2-5 resumes (PDF/DOCX) side-by-side in minutes. Used by hiring managers and recruiters to shortlist candidates and reduce bias.",
     sameAs: [
       process.env.NEXT_PUBLIC_TWITTER_URL,
       process.env.NEXT_PUBLIC_LINKEDIN_URL,
@@ -30,10 +34,10 @@ export function webSiteSchema() {
     "@type": "WebSite",
     name: SITE_NAME,
     url: baseUrl,
-    description: "Free AI resume comparison tool. Upload 2-5 resumes, get side-by-side analysis, scoring, and hiring recommendations in minutes. Trusted by hiring managers.",
+    description: "Free resume comparison tool. Upload 2-5 resumes, get side-by-side analysis, scoring, and hiring recommendations in minutes. Trusted by hiring managers and recruiters.",
     potentialAction: {
       "@type": "SearchAction",
-      target: { "@type": "EntryPoint", urlTemplate: `${baseUrl}/login` },
+      target: { "@type": "EntryPoint", urlTemplate: `${baseUrl}/upload` },
       "query-input": "required name=search_term_string",
     },
   };
@@ -48,7 +52,7 @@ export function softwareApplicationSchema() {
     applicationCategory: "BusinessApplication",
     operatingSystem: "Web",
     url: baseUrl,
-    description: "Compare 2-5 resumes in minutes with AI. Side-by-side analysis, skills gap detection, scoring, and hiring recommendations. Free. Used by hiring managers and recruiters to shortlist candidates and reduce bias.",
+    description: "Compare 2-5 resumes in minutes. Side-by-side analysis, skills gap detection, scoring, and hiring recommendations. Free. Used by hiring managers and recruiters to shortlist candidates and reduce bias.",
     offers: {
       "@type": "Offer",
       price: "0",
@@ -56,7 +60,7 @@ export function softwareApplicationSchema() {
     },
     featureList: [
       "Compare 2-5 resumes (PDF/DOCX) at once",
-      "AI-powered side-by-side analysis",
+      "Side-by-side analysis and smart ranking",
       "Skills gap and fit scoring",
       "Hiring recommendations",
       "Reduce bias in shortlisting",

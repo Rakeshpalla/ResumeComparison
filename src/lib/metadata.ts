@@ -1,30 +1,47 @@
+/**
+ * SEO: Reusable metadata builder for all pages.
+ * Provides: title (50-60 chars), meta description (150-160), keywords, canonical,
+ * Open Graph (Facebook/LinkedIn/WhatsApp/Discord), Twitter Card, robots, Google/Bing verification.
+ * Use buildMetadata({ title, description?, path?, imagePath?, noIndex?, keywords? }) in layouts.
+ */
 import type { Metadata } from "next";
 
 const SITE_NAME = "Resume Comparison Engine";
 const DEFAULT_DESCRIPTION =
-  "Compare 2-5 resumes in minutes, not hours. AI-powered side-by-side analysis trusted by hiring managers. Free resume comparison tool — reduce bias, shortlist with confidence.";
+  "Free resume comparison tool. Compare 2-5 resumes side-by-side in minutes. Used by hiring managers and recruiters to shortlist candidates, reduce bias, and make better hires. No signup required.";
 const TWITTER_HANDLE = process.env.NEXT_PUBLIC_TWITTER_HANDLE || "";
 const KEYWORDS = [
   "resume comparison",
   "resume comparison tool",
   "compare resumes online",
-  "AI resume screening",
+  "free resume comparison",
   "hiring manager tool",
   "candidate comparison",
   "resume ranking",
   "shortlist candidates",
   "resume analysis",
+  "compare resumes side by side",
+  "resume screening tool",
   "hire better",
-  "side-by-side resumes",
+  "recruiter tool",
   "consulting-grade hiring",
   "reduce hiring bias",
   "resume scoring",
+  "resume comparison for hiring",
+  "compare candidate resumes",
 ];
+
+const TITLE_MAX_LENGTH = 60;
+const DESCRIPTION_MAX_LENGTH = 160;
 
 export function getBaseUrl(): string {
   return process.env.NEXT_PUBLIC_APP_URL || "https://resumecomparison.vercel.app";
 }
 
+/**
+ * Build SEO metadata for a page. Accepts title, description, path, imagePath, noIndex, keywords.
+ * Ensures title 50-60 chars, description 150-160 chars, canonical, OG, Twitter, robots, verification.
+ */
 export function buildMetadata(params: {
   title: string;
   description?: string;
@@ -36,19 +53,31 @@ export function buildMetadata(params: {
   const { title, description = DEFAULT_DESCRIPTION, path = "", imagePath, noIndex = false, keywords = KEYWORDS } = params;
   const baseUrl = getBaseUrl();
   const url = path ? `${baseUrl}${path.startsWith("/") ? path : `/${path}`}` : baseUrl;
+  const fullTitle = path ? `${title} | ${SITE_NAME}` : `${title} - ${SITE_NAME}`;
+  const metaTitle = fullTitle.slice(0, TITLE_MAX_LENGTH);
+  const metaDescription = description.slice(0, DESCRIPTION_MAX_LENGTH);
   const ogImage = imagePath
     ? `${baseUrl}${imagePath.startsWith("/") ? imagePath : `/${imagePath}`}`
     : `${baseUrl}/api/og?title=${encodeURIComponent(title)}`;
 
+  const verification: Metadata["verification"] = {};
+  if (process.env.GOOGLE_VERIFICATION_CODE) {
+    verification.google = process.env.GOOGLE_VERIFICATION_CODE;
+  }
+  if (process.env.BING_VERIFICATION_CODE) {
+    verification.other = { "msvalidate.01": process.env.BING_VERIFICATION_CODE };
+  }
+
   return {
-    title: path ? `${title} | ${SITE_NAME}` : `${title} - ${SITE_NAME}`,
-    description: description.slice(0, 160),
+    title: metaTitle,
+    description: metaDescription,
     keywords: keywords,
     authors: [{ name: SITE_NAME, url: baseUrl }],
     creator: SITE_NAME,
+    alternates: path !== undefined ? { canonical: url } : undefined,
     openGraph: {
       title: title,
-      description: description.slice(0, 160),
+      description: metaDescription,
       url,
       siteName: SITE_NAME,
       images: [
@@ -65,8 +94,8 @@ export function buildMetadata(params: {
     twitter: {
       card: "summary_large_image",
       title: title,
-      description: description.slice(0, 160),
-      ...(TWITTER_HANDLE ? { creator: TWITTER_HANDLE } : {}),
+      description: metaDescription,
+      ...(TWITTER_HANDLE ? { creator: TWITTER_HANDLE, site: TWITTER_HANDLE } : {}),
       images: [ogImage],
     },
     robots: noIndex
@@ -82,9 +111,7 @@ export function buildMetadata(params: {
             "max-snippet": -1,
           },
         },
-    ...(process.env.GOOGLE_VERIFICATION_CODE
-      ? { verification: { google: process.env.GOOGLE_VERIFICATION_CODE } }
-      : {}),
+    ...(Object.keys(verification).length > 0 ? { verification } : {}),
   };
 }
 

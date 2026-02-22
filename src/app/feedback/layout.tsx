@@ -1,10 +1,29 @@
+/**
+ * Feedback layout: SEO metadata, BreadcrumbList JSON-LD, header/footer.
+ */
 import type { ReactNode } from "react";
 import Link from "next/link";
+import { buildMetadata } from "../../lib/metadata";
+import { breadcrumbSchema } from "../../lib/structured-data";
+import { StructuredData } from "@/components/StructuredData";
 import { Footer } from "@/components/Footer";
+
+export const metadata = buildMetadata({
+  title: "Feedback",
+  description:
+    "Share feedback on Resume Comparison Engine. Help us improve the tool for hiring managers and recruiters.",
+  path: "/feedback",
+});
+
+const FEEDBACK_BREADCRUMB = breadcrumbSchema([
+  { name: "Home", path: "/" },
+  { name: "Feedback", path: "/feedback" },
+]);
 
 export default function FeedbackLayout({ children }: { children: ReactNode }) {
   return (
     <>
+      <StructuredData data={FEEDBACK_BREADCRUMB} />
       <header className="border-b border-slate-200/80 bg-white/80 backdrop-blur-xl shadow-sm">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
           <Link href="/" className="flex items-center gap-4">

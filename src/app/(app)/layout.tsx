@@ -1,3 +1,6 @@
+/**
+ * App layout (upload, compare): SEO via buildMetadata, header/footer. All links use <Link> (accessible <a href>).
+ */
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { Footer } from "../../components/Footer";

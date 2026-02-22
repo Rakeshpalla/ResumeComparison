@@ -1,3 +1,6 @@
+/**
+ * Login layout: SEO metadata (title, description, path /login), redirect to upload when guest-only.
+ */
 import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
 import { buildMetadata } from "../../../lib/metadata";

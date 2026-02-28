@@ -25,22 +25,25 @@ export default function LandingLenis({ children }: { children: ReactNode }) {
       });
     };
 
-    const idleId =
-      typeof window !== "undefined" && "requestIdleCallback" in window
-        ? (window as Window & { requestIdleCallback: typeof requestIdleCallback }).requestIdleCallback(startLenis, { timeout: 2000 })
-        : window.setTimeout(startLenis, 1500);
+    let idleId: number | ReturnType<typeof setTimeout>;
+    if (typeof window !== "undefined" && "requestIdleCallback" in window) {
+      idleId = (window as Window & { requestIdleCallback: typeof requestIdleCallback }).requestIdleCallback(startLenis, { timeout: 2000 });
+    } else {
+      idleId = setTimeout(startLenis, 1500);
+    }
 
+    const scrollOpts: AddEventListenerOptions = { passive: true };
     const onFirstScroll = () => {
       startLenis();
-      window.removeEventListener("scroll", onFirstScroll, { passive: true });
+      window.removeEventListener("scroll", onFirstScroll, scrollOpts);
     };
-    window.addEventListener("scroll", onFirstScroll, { passive: true });
+    window.addEventListener("scroll", onFirstScroll, scrollOpts);
 
     return () => {
       mounted = false;
       if (typeof window !== "undefined" && "cancelIdleCallback" in window)
         (window as Window & { cancelIdleCallback: typeof cancelIdleCallback }).cancelIdleCallback(idleId as number);
-      else clearTimeout(idleId as number);
+      else clearTimeout(idleId);
       window.removeEventListener("scroll", onFirstScroll);
       cancelAnimationFrame(rafRef.current);
       lenis?.destroy();

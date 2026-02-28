@@ -9,20 +9,27 @@ type SocialShareProps = {
   title?: string;
   text?: string;
   className?: string;
+  theme?: "light" | "dark";
 };
 
 const defaultTitle = "Resume Comparison Engine — Compare 2-5 Resumes in Minutes";
 // Viral hook for shares on X, LinkedIn, WhatsApp, etc.
 const defaultText = "I just tried the Resume Comparison Engine — compare 2–5 resumes side-by-side with smart ranking. Worth a look for hiring managers.";
 
+const btnBase = "inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition";
+const btnLight = "border border-slate-300 bg-white text-slate-700 shadow-sm hover:bg-slate-50";
+const btnDark = "border border-slate-600 bg-slate-800 text-slate-300 hover:border-slate-500 hover:bg-slate-700";
+
 export function SocialShare({
   url = typeof window !== "undefined" ? window.location.href : getBaseUrl(),
   title = defaultTitle,
   text = defaultText,
   className = "",
+  theme = "light",
 }: SocialShareProps) {
   const [copied, setCopied] = useState(false);
   const shareUrls = buildShareUrls({ url, title, text });
+  const btnClass = `${btnBase} ${theme === "dark" ? btnDark : btnLight}`;
 
   const handleNativeShare = async () => {
     const ok = await nativeShare({ url, title, text });
@@ -42,71 +49,34 @@ export function SocialShare({
   return (
     <div className={`flex flex-wrap items-center gap-2 ${className}`}>
       {useNative && (
-        <button
-          type="button"
-          onClick={handleNativeShare}
-          className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50"
-        >
+        <button type="button" onClick={handleNativeShare} className={btnClass}>
           <ShareIcon className="h-4 w-4" />
           Share
         </button>
       )}
-      <a
-        href={shareUrls.twitter}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50"
-        aria-label="Share on X (Twitter)"
-      >
+      <a href={shareUrls.twitter} target="_blank" rel="noopener noreferrer" className={btnClass} aria-label="Share on X (Twitter)">
         <XIcon className="h-4 w-4" />
         X
       </a>
-      <a
-        href={shareUrls.linkedin}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50"
-        aria-label="Share on LinkedIn"
-      >
+      <a href={shareUrls.linkedin} target="_blank" rel="noopener noreferrer" className={btnClass} aria-label="Share on LinkedIn">
         <LinkedInIcon className="h-4 w-4" />
         LinkedIn
       </a>
-      <a
-        href={shareUrls.facebook}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50"
-        aria-label="Share on Facebook"
-      >
+      <a href={shareUrls.facebook} target="_blank" rel="noopener noreferrer" className={btnClass} aria-label="Share on Facebook">
         <FacebookIcon className="h-4 w-4" />
         Facebook
       </a>
-      <a
-        href={shareUrls.whatsapp}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50"
-        aria-label="Share on WhatsApp"
-      >
+      <a href={shareUrls.whatsapp} target="_blank" rel="noopener noreferrer" className={btnClass} aria-label="Share on WhatsApp">
         <WhatsAppIcon className="h-4 w-4" />
         WhatsApp
       </a>
-      <a
-        href={shareUrls.email}
-        className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50"
-        aria-label="Share by email"
-      >
+      <a href={shareUrls.email} className={btnClass} aria-label="Share by email">
         <EmailIcon className="h-4 w-4" />
         Email
       </a>
-      <button
-        type="button"
-        onClick={handleCopy}
-        className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50"
-        aria-label="Copy link"
-      >
+      <button type="button" onClick={handleCopy} className={btnClass} aria-label="Copy link">
         {copied ? (
-          <CheckIcon className="h-4 w-4 text-green-600" />
+          <CheckIcon className={`h-4 w-4 ${theme === "dark" ? "text-emerald-400" : "text-green-600"}`} />
         ) : (
           <LinkIcon className="h-4 w-4" />
         )}

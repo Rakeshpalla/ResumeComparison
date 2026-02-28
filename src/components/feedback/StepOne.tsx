@@ -16,11 +16,11 @@ type Props = {
 export function StepOne({ control, errors }: Props) {
   return (
     <div className="animate-fade-in space-y-6">
-      <h2 className="text-xl font-semibold text-slate-900">Tell us a little about yourself</h2>
+      <h2 className="text-lg font-semibold text-white">Tell us a little about yourself</h2>
 
       <div>
-        <label htmlFor="role" className="mb-2 block text-sm font-medium text-slate-700">
-          What best describes your role? <span className="text-red-500">*</span>
+        <label htmlFor="role" className="mb-2 block text-sm font-medium text-zinc-300">
+          What best describes your role? <span className="text-red-400">*</span>
         </label>
         <Controller
           name="role"
@@ -29,7 +29,7 @@ export function StepOne({ control, errors }: Props) {
           render={({ field }) => (
             <select
               id="role"
-              className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-slate-900"
+              className="w-full rounded-lg border border-white/10 bg-zinc-800 px-4 py-2.5 text-white"
               {...field}
             >
               <option value="">Select…</option>
@@ -39,12 +39,12 @@ export function StepOne({ control, errors }: Props) {
             </select>
           )}
         />
-        {errors.role && <p className="mt-1 text-sm text-red-600">{errors.role.message}</p>}
+        {errors.role && <p className="mt-1 text-sm text-red-400">{errors.role.message}</p>}
       </div>
 
       <div>
-        <label htmlFor="resumes_per_role" className="mb-2 block text-sm font-medium text-slate-700">
-          How many resumes do you typically review per open role? <span className="text-red-500">*</span>
+        <label htmlFor="resumes_per_role" className="mb-2 block text-sm font-medium text-zinc-300">
+          How many resumes do you typically review per open role? <span className="text-red-400">*</span>
         </label>
         <Controller
           name="resumes_per_role"
@@ -53,7 +53,7 @@ export function StepOne({ control, errors }: Props) {
           render={({ field }) => (
             <select
               id="resumes_per_role"
-              className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-slate-900"
+              className="w-full rounded-lg border border-white/10 bg-zinc-800 px-4 py-2.5 text-white"
               {...field}
             >
               <option value="">Select…</option>
@@ -63,7 +63,7 @@ export function StepOne({ control, errors }: Props) {
             </select>
           )}
         />
-        {errors.resumes_per_role && <p className="mt-1 text-sm text-red-600">{errors.resumes_per_role.message}</p>}
+        {errors.resumes_per_role && <p className="mt-1 text-sm text-red-400">{errors.resumes_per_role.message}</p>}
       </div>
     </div>
   );

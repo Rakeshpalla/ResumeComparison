@@ -24,7 +24,7 @@ export function StarRating({
           key={star}
           type="button"
           disabled={disabled}
-          className="rounded p-0.5 transition-transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-60 disabled:pointer-events-none"
+          className="rounded p-0.5 transition-transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-zinc-900 disabled:opacity-60 disabled:pointer-events-none"
           onMouseEnter={() => setHover(star)}
           onMouseLeave={() => setHover(null)}
           onClick={() => onChange(star)}
@@ -35,7 +35,7 @@ export function StarRating({
             className={`text-2xl ${
               star <= display
                 ? "text-amber-400"
-                : "text-slate-300"
+                : "text-zinc-600"
             }`}
           >
             ★

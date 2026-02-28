@@ -54,7 +54,7 @@ export function FeedbackTable({ rows }: { rows: FeedbackRow[] }) {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-4">
-        <label className="flex items-center gap-2 text-sm text-slate-700">
+        <label className="flex items-center gap-2 text-sm text-zinc-300">
           Filter by role
           <select
             value={roleFilter}
@@ -62,7 +62,7 @@ export function FeedbackTable({ rows }: { rows: FeedbackRow[] }) {
               setRoleFilter(e.target.value);
               setPage(0);
             }}
-            className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-slate-900"
+            className="rounded-lg border border-white/10 bg-zinc-800 px-3 py-1.5 text-white"
           >
             <option value="">All</option>
             {ROLE_OPTIONS.map((o) => (
@@ -72,52 +72,52 @@ export function FeedbackTable({ rows }: { rows: FeedbackRow[] }) {
         </label>
       </div>
 
-      <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
+      <div className="overflow-x-auto rounded-xl border border-white/10 bg-zinc-900/50">
         <table className="w-full min-w-[800px] text-left text-sm">
-          <thead className="border-b border-slate-200 bg-slate-50">
+          <thead className="border-b border-white/10 bg-zinc-800/50">
             <tr>
-              <th className="px-4 py-3 font-medium text-slate-700">
+              <th className="px-4 py-3 font-medium text-zinc-300">
                 <button
                   type="button"
                   onClick={() => toggleSort("created_at")}
-                  className="hover:text-indigo-600"
+                  className="hover:text-indigo-400"
                 >
                   Date {sortKey === "created_at" ? (sortDir === "desc" ? "↓" : "↑") : ""}
                 </button>
               </th>
-              <th className="px-4 py-3 font-medium text-slate-700">Role</th>
-              <th className="px-4 py-3 font-medium text-slate-700">Resumes/Role</th>
-              <th className="px-4 py-3 font-medium text-slate-700">
+              <th className="px-4 py-3 font-medium text-zinc-300">Role</th>
+              <th className="px-4 py-3 font-medium text-zinc-300">Resumes/Role</th>
+              <th className="px-4 py-3 font-medium text-zinc-300">
                 <button
                   type="button"
                   onClick={() => toggleSort("usefulness_rating")}
-                  className="hover:text-indigo-600"
+                  className="hover:text-indigo-400"
                 >
                   Usefulness ★ {sortKey === "usefulness_rating" ? (sortDir === "desc" ? "↓" : "↑") : ""}
                 </button>
               </th>
-              <th className="px-4 py-3 font-medium text-slate-700">Would Recommend</th>
-              <th className="px-4 py-3 font-medium text-slate-700">Missing Features</th>
-              <th className="px-4 py-3 font-medium text-slate-700">Email</th>
+              <th className="px-4 py-3 font-medium text-zinc-300">Would Recommend</th>
+              <th className="px-4 py-3 font-medium text-zinc-300">Missing Features</th>
+              <th className="px-4 py-3 font-medium text-zinc-300">Email</th>
             </tr>
           </thead>
           <tbody>
             {paginated.map((r) => (
-              <tr key={r.id} className="border-b border-slate-100 hover:bg-slate-50">
-                <td className="px-4 py-3 text-slate-600">
+              <tr key={r.id} className="border-b border-white/5 hover:bg-white/5">
+                <td className="px-4 py-3 text-zinc-400">
                   {new Date(r.created_at).toLocaleString(undefined, {
                     dateStyle: "short",
                     timeStyle: "short",
                   })}
                 </td>
-                <td className="px-4 py-3">{r.role ?? "—"}</td>
-                <td className="px-4 py-3">{r.resumes_per_role ?? "—"}</td>
-                <td className="px-4 py-3">{r.usefulness_rating ?? "—"}</td>
-                <td className="px-4 py-3">{r.would_recommend ?? "—"}</td>
-                <td className="max-w-[200px] truncate px-4 py-3" title={(r.missing_features ?? []).join(", ")}>
+                <td className="px-4 py-3 text-white">{r.role ?? "—"}</td>
+                <td className="px-4 py-3 text-white">{r.resumes_per_role ?? "—"}</td>
+                <td className="px-4 py-3 text-white">{r.usefulness_rating ?? "—"}</td>
+                <td className="px-4 py-3 text-white">{r.would_recommend ?? "—"}</td>
+                <td className="max-w-[200px] truncate px-4 py-3 text-zinc-400" title={(r.missing_features ?? []).join(", ")}>
                   {(r.missing_features ?? []).join(", ") || "—"}
                 </td>
-                <td className="px-4 py-3 text-slate-600">{r.email ?? "—"}</td>
+                <td className="px-4 py-3 text-zinc-400">{r.email ?? "—"}</td>
               </tr>
             ))}
           </tbody>
@@ -126,7 +126,7 @@ export function FeedbackTable({ rows }: { rows: FeedbackRow[] }) {
 
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
-          <p className="text-sm text-slate-600">
+          <p className="text-sm text-zinc-400">
             Page {page + 1} of {totalPages} ({filtered.length} rows)
           </p>
           <div className="flex gap-2">
@@ -134,7 +134,7 @@ export function FeedbackTable({ rows }: { rows: FeedbackRow[] }) {
               type="button"
               disabled={page === 0}
               onClick={() => setPage((p) => p - 1)}
-              className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm disabled:opacity-50"
+              className="rounded-lg border border-white/10 bg-zinc-800 px-3 py-1.5 text-sm text-white disabled:opacity-50"
             >
               Previous
             </button>
@@ -142,7 +142,7 @@ export function FeedbackTable({ rows }: { rows: FeedbackRow[] }) {
               type="button"
               disabled={page >= totalPages - 1}
               onClick={() => setPage((p) => p + 1)}
-              className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm disabled:opacity-50"
+              className="rounded-lg border border-white/10 bg-zinc-800 px-3 py-1.5 text-sm text-white disabled:opacity-50"
             >
               Next
             </button>

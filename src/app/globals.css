@@ -3,12 +3,12 @@
 @tailwind utilities;
 
 :root {
-  color-scheme: light;
-  --color-primary: 99 102 241; /* indigo-500 */
-  --color-primary-dark: 79 70 229; /* indigo-600 */
-  --color-success: 34 197 94; /* green-500 */
-  --color-warning: 234 179 8; /* yellow-500 */
-  --color-error: 239 68 68; /* red-500 */
+  color-scheme: dark;
+  --color-primary: 99 102 241;
+  --color-primary-dark: 79 70 229;
+  --color-success: 34 197 94;
+  --color-warning: 234 179 8;
+  --color-error: 239 68 68;
 }
 
 * {
@@ -16,7 +16,9 @@
 }
 
 body {
-  @apply bg-gradient-to-br from-slate-50 via-indigo-50/30 to-slate-50 text-slate-900 antialiased;
+  /* ~8% lighter than #09090b for better readability */
+  background-color: #1d1d1f;
+  @apply text-zinc-200 antialiased;
 }
 
 /* Modern input styles */
@@ -46,17 +48,17 @@ html {
   @apply scroll-smooth;
 }
 
-/* Custom scrollbar */
+/* Custom scrollbar - dark theme to match default body */
 ::-webkit-scrollbar {
   @apply w-2 h-2;
 }
 
 ::-webkit-scrollbar-track {
-  @apply bg-slate-100;
+  @apply bg-slate-800;
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-slate-300 rounded-full hover:bg-slate-400;
+  @apply bg-slate-600 rounded-full hover:bg-slate-500;
 }
 
 /* Loading animation */
@@ -119,6 +121,26 @@ html {
 
 .card-hover:hover {
   transform: translate3d(0, -4px, 0);
+}
+
+/* Premium card lift — lightweight */
+.card-lift {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.card-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-raised);
+}
+
+/* Fade-in on scroll (use with intersection or motion) */
+.fade-in-scroll {
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.fade-in-scroll.visible {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 /* Performance optimization */

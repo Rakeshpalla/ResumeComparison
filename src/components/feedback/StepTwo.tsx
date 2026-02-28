@@ -16,11 +16,11 @@ type Props = {
 export function StepTwo({ control, errors }: Props) {
   return (
     <div className="animate-fade-in space-y-6">
-      <h2 className="text-xl font-semibold text-slate-900">Before you used Resume Comparison Engine…</h2>
+      <h2 className="text-lg font-semibold text-white">Before you used Resume Comparison Engine…</h2>
 
       <div>
-        <label htmlFor="previous_method" className="mb-2 block text-sm font-medium text-slate-700">
-          How were you comparing resumes before this tool? <span className="text-red-500">*</span>
+        <label htmlFor="previous_method" className="mb-2 block text-sm font-medium text-zinc-300">
+          How were you comparing resumes before this tool? <span className="text-red-400">*</span>
         </label>
         <Controller
           name="previous_method"
@@ -29,7 +29,7 @@ export function StepTwo({ control, errors }: Props) {
           render={({ field }) => (
             <select
               id="previous_method"
-              className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-slate-900"
+              className="w-full rounded-lg border border-white/10 bg-zinc-800 px-4 py-2.5 text-white"
               {...field}
             >
               <option value="">Select…</option>
@@ -39,12 +39,12 @@ export function StepTwo({ control, errors }: Props) {
             </select>
           )}
         />
-        {errors.previous_method && <p className="mt-1 text-sm text-red-600">{errors.previous_method.message}</p>}
+        {errors.previous_method && <p className="mt-1 text-sm text-red-400">{errors.previous_method.message}</p>}
       </div>
 
       <div>
-        <label htmlFor="pain_point" className="mb-2 block text-sm font-medium text-slate-700">
-          What was the most frustrating part of your old process? <span className="text-red-500">*</span>
+        <label htmlFor="pain_point" className="mb-2 block text-sm font-medium text-zinc-300">
+          What was the most frustrating part of your old process? <span className="text-red-400">*</span>
         </label>
         <Controller
           name="pain_point"
@@ -56,12 +56,12 @@ export function StepTwo({ control, errors }: Props) {
               rows={4}
               maxLength={300}
               placeholder="e.g. It took hours and I still wasn't confident in my shortlist…"
-              className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-slate-900 placeholder:text-slate-400"
+              className="w-full rounded-lg border border-white/10 bg-zinc-800 px-4 py-2.5 text-white placeholder:text-zinc-500"
               {...field}
             />
           )}
         />
-        {errors.pain_point && <p className="mt-1 text-sm text-red-600">{errors.pain_point.message}</p>}
+        {errors.pain_point && <p className="mt-1 text-sm text-red-400">{errors.pain_point.message}</p>}
       </div>
     </div>
   );

@@ -8,13 +8,16 @@ import { ThankYouCard } from "@/components/feedback/ThankYouCard";
  */
 export function ThankYouContent({ usefulnessRating }: { usefulnessRating: number }) {
   return (
-    <div className="mx-auto max-w-xl py-8">
-      <div className="mb-8">
-        <Link href="/" className="text-sm font-medium text-indigo-600 hover:text-indigo-700">
-          ← Back to app
+    <div className="mx-auto max-w-xl py-6">
+      <div className="mb-6">
+        <Link href="/" className="inline-flex items-center gap-1.5 text-sm font-medium text-indigo-400 transition-colors hover:text-indigo-300">
+          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+          </svg>
+          Back to app
         </Link>
       </div>
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+      <div className="rounded-2xl border border-white/10 bg-zinc-900/50 p-6 backdrop-blur-sm sm:p-8">
         <ThankYouCard usefulnessRating={usefulnessRating} />
       </div>
     </div>

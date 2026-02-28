@@ -30,29 +30,29 @@ export function OpenEndedFeed({ rows }: { rows: FeedbackRow[] }) {
   entries.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
+    <div className="rounded-xl border border-white/10 bg-zinc-900/50">
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="flex w-full items-center justify-between px-4 py-3 text-left font-medium text-slate-900 hover:bg-slate-50"
+        className="flex w-full items-center justify-between px-4 py-3 text-left font-medium text-white hover:bg-white/5"
       >
         What people are saying
-        <span className="text-slate-500">{open ? "▼" : "▶"}</span>
+        <span className="text-zinc-400">{open ? "▼" : "▶"}</span>
       </button>
       {open && (
-        <div className="border-t border-slate-200 p-4">
+        <div className="border-t border-white/10 p-4">
           <ul className="space-y-4">
             {entries.length === 0 ? (
-              <li className="text-sm text-slate-500">No open-ended answers yet.</li>
+              <li className="text-sm text-zinc-500">No open-ended answers yet.</li>
             ) : (
               entries.map((e, i) => (
-                <li key={`${e.date}-${i}-${e.type}`} className="border-l-2 border-indigo-200 pl-4">
-                  <p className="text-xs text-slate-500">
+                <li key={`${e.date}-${i}-${e.type}`} className="border-l-2 border-indigo-500/50 pl-4">
+                  <p className="text-xs text-zinc-500">
                     {new Date(e.date).toLocaleString()} · {e.role}
                     {e.type === "pain" && " · Pain point"}
                     {e.type === "open" && " · Open feedback"}
                   </p>
-                  <p className="mt-1 text-slate-800">{e.text}</p>
+                  <p className="mt-1 text-zinc-300">{e.text}</p>
                 </li>
               ))
             )}

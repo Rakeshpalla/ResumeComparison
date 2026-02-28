@@ -8,13 +8,13 @@ export function ProgressBar({ step, total }: { step: number; total: number }) {
   const percent = total > 0 ? Math.round((step / total) * 100) : 0;
   return (
     <div className="w-full" role="progressbar" aria-valuenow={step} aria-valuemin={1} aria-valuemax={total} aria-label={`Step ${step} of ${total}`}>
-      <div className="mb-1 flex justify-between text-sm text-slate-600">
+      <div className="mb-2 flex justify-between text-sm text-zinc-400">
         <span>Step {step} of {total}</span>
         <span>{percent}%</span>
       </div>
-      <div className="h-2 w-full overflow-hidden rounded-full bg-slate-200">
+      <div className="h-1.5 w-full overflow-hidden rounded-full bg-zinc-800">
         <div
-          className="h-full rounded-full bg-indigo-600 transition-all duration-300 ease-out"
+          className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-cyan-500 transition-all duration-300 ease-out"
           style={{ width: `${percent}%` }}
         />
       </div>

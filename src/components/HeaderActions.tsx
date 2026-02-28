@@ -29,7 +29,7 @@ export function HeaderActions() {
   if (!mounted) {
     return (
       <div className="flex items-center gap-3">
-        <div className="h-10 w-24 animate-pulse rounded-lg bg-slate-200" />
+        <div className="h-10 w-24 animate-pulse rounded-lg bg-slate-700" />
       </div>
     );
   }
@@ -41,8 +41,8 @@ export function HeaderActions() {
     <div className="flex items-center gap-3">
       {showHomeButton && (
         <Link
-          href="/upload"
-          className="group flex items-center gap-2 rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm ring-1 ring-slate-200 transition-all hover:bg-slate-50 hover:shadow-md"
+          href="/"
+          className="group flex items-center gap-2 rounded-xl border border-slate-600 px-4 py-2.5 text-sm font-medium text-slate-200 transition hover:border-slate-500 hover:bg-slate-700/60 hover:text-white"
         >
           <svg className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
@@ -52,7 +52,7 @@ export function HeaderActions() {
       )}
       <Link
         href="/feedback"
-        className="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md transition-all hover:bg-indigo-700 hover:shadow-lg"
+        className="flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-500/25 transition hover:bg-indigo-500"
         aria-label="Give feedback"
       >
         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -63,7 +63,7 @@ export function HeaderActions() {
       {process.env.NEXT_PUBLIC_REQUIRE_LOGIN === "true" && (
         <button
           type="button"
-          className="flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-slate-800 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60"
+          className="flex items-center gap-2 rounded-xl border border-slate-600 bg-slate-800 px-4 py-2.5 text-sm font-medium text-slate-200 transition hover:border-slate-500 hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60"
           disabled={isLoggingOut}
           onClick={async () => {
             setIsLoggingOut(true);

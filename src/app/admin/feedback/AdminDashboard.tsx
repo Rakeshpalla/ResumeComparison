@@ -28,11 +28,11 @@ export function AdminDashboard({ initialRows }: { initialRows: FeedbackRow[] }) 
   return (
     <div className="space-y-8">
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <h1 className="text-2xl font-bold text-slate-900">Feedback dashboard</h1>
+        <h1 className="font-display text-2xl font-bold text-white">Feedback dashboard</h1>
         <button
           type="button"
           onClick={handleExport}
-          className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+          className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-500"
         >
           Export to CSV
         </button>

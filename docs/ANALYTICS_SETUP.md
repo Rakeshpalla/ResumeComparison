@@ -124,6 +124,17 @@ The app automatically tracks these events (visible in Google Analytics → **Eve
 
 ---
 
+## Key events (conversions) in GA4
+
+The app sends these events: `file_upload`, `comparison_generated`, `export_downloaded`, `feedback_submitted`, `user_auth`. To see them in the **Key events by Platform** widget and use them as conversions:
+
+1. In GA4, go to **Admin** (gear) → **Data display** → **Events**.
+2. Find `file_upload`, `comparison_generated`, `export_downloaded`, `feedback_submitted` in the list.
+3. Turn **Mark as key event** ON for the events you care about (e.g. `comparison_generated`, `export_downloaded`, `feedback_submitted`).
+4. Key events will then appear in Reports snapshot and in conversion reports.
+
+---
+
 ## Privacy & Compliance
 
 - **Vercel Analytics:** Privacy-friendly, GDPR compliant, no cookies

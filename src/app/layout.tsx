@@ -46,9 +46,13 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <StructuredData data={schemas} />
         <link rel="preconnect" href="https://www.googletagmanager.com" />
         <link rel="dns-prefetch" href="https://www.google-analytics.com" />
+        {/* Landing page fonts: display (headlines), body */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
       </head>
       <body>
-        <div className="min-h-screen bg-slate-50">{children}</div>
+        <div className="min-h-screen">{children}</div>
         <Analytics />
       </body>
     </html>

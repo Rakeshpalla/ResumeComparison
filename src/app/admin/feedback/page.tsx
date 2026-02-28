@@ -12,7 +12,7 @@ export default async function AdminFeedbackPage() {
   const authenticated = await isAdminAuthenticated();
   if (!authenticated) {
     return (
-      <div className="flex min-h-[60vh] items-center justify-center px-4">
+      <div className="flex min-h-[60vh] items-center justify-center bg-[#1d1d1f] px-4">
         <AdminLoginForm />
       </div>
     );
@@ -29,8 +29,10 @@ export default async function AdminFeedbackPage() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
-      <AdminDashboard initialRows={rows} />
+    <div className="min-h-screen bg-[#1d1d1f] px-4 py-8 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-6xl">
+        <AdminDashboard initialRows={rows} />
+      </div>
     </div>
   );
 }

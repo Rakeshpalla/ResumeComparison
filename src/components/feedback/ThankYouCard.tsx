@@ -10,19 +10,19 @@ export function ThankYouCard({ usefulnessRating }: { usefulnessRating: number })
   const tweetUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}&url=${encodeURIComponent(shareUrl)}`;
 
   return (
-    <div className="space-y-6">
-      <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h3 className="text-lg font-semibold text-slate-900">Thank you!</h3>
-        <p className="mt-2 text-slate-600">Your feedback was saved.</p>
+    <div className="space-y-5">
+      <div className="rounded-xl border border-white/10 bg-zinc-800/50 p-5">
+        <h3 className="text-lg font-semibold text-white">Thank you!</h3>
+        <p className="mt-1 text-zinc-400">Your feedback was saved.</p>
       </div>
 
-      <div className="rounded-xl border border-indigo-100 bg-indigo-50/50 p-6">
-        <h4 className="font-semibold text-indigo-900">Your personalized tip</h4>
-        <p className="mt-2 text-indigo-800">{tipBlock}</p>
+      <div className="rounded-xl border border-indigo-500/20 bg-indigo-500/10 p-5">
+        <h4 className="font-semibold text-indigo-300">Your personalized tip</h4>
+        <p className="mt-2 text-indigo-200">{tipBlock}</p>
       </div>
 
-      <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-        <p className="mb-3 text-sm font-medium text-slate-700">
+      <div className="rounded-xl border border-white/10 bg-zinc-800/50 p-5">
+        <p className="mb-3 text-sm font-medium text-zinc-300">
           Help other hiring managers discover this →
         </p>
         <a

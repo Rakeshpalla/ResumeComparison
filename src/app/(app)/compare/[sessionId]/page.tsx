@@ -608,66 +608,76 @@ export default function ComparePage() {
   const [debouncedJd, setDebouncedJd] = useState("");
   const [jdSettleDone, setJdSettleDone] = useState(false);
   useEffect(() => {
-    const t = setTimeout(() => setDebouncedJd(jobDescription.trim()), 400);
+    const t = setTimeout(() => setDebouncedJd(jobDescription.trim()), 100);
     return () => clearTimeout(t);
   }, [jobDescription]);
 
   useEffect(() => {
-    const t = setTimeout(() => setJdSettleDone(true), 450);
+    const t = setTimeout(() => setJdSettleDone(true), 150);
     return () => clearTimeout(t);
   }, []);
 
+  // Single effect: load hiring-ui (and rank for 3+ docs) in parallel, then batch state update to avoid multiple refreshes
   useEffect(() => {
-    if (!sessionId) return;
-    if (data?.status !== "COMPLETED" || !data?.documents || data.documents.length > 2) {
-      setHiringUi(null);
+    if (!sessionId || data?.status !== "COMPLETED" || !data?.documents || data.documents.length < 2 || !jdSettleDone) {
+      if (data?.status !== "COMPLETED" || !data?.documents) {
+        setHiringUi(null);
+        setRankUi(null);
+      }
       return;
     }
-    if (!jdSettleDone) return;
     let active = true;
-    async function loadHiringUi() {
-      try {
-        const jd = debouncedJd;
-        const response = jd.length > 0
-          ? await fetch(`/api/sessions/${sessionId}/hiring-ui?lens=hiring`, { method: "POST", cache: "no-store", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ jdText: jd }) })
-          : await fetch(`/api/sessions/${sessionId}/hiring-ui?lens=hiring`, { cache: "no-store" });
-        if (response.status === 401) { window.location.href = process.env.NEXT_PUBLIC_REQUIRE_LOGIN === "true" ? "/login" : "/upload"; return; }
-        if (!response.ok) { setHiringUi(null); return; }
-        if (!active) return;
-        setHiringUi((await response.json()) as HiringUiResponse);
-      } catch { setHiringUi(null); }
-    }
-    loadHiringUi();
-    return () => { active = false; };
-  }, [sessionId, debouncedJd, data?.status, data?.documents?.length, jdSettleDone]);
+    const jd = debouncedJd;
+    const isMultiDoc = data.documents.length > 2;
 
-  useEffect(() => {
-    if (!sessionId) return;
-    if (data?.status !== "COMPLETED" || !data?.documents || data.documents.length <= 2) {
-      setRankUi(null);
-      return;
-    }
-    if (!jdSettleDone) return;
-    let active = true;
-    async function loadRank() {
+    (async () => {
       try {
-        const ctx = debouncedJd;
-        const url = `/api/sessions/${sessionId}/rank?lens=${lens}`;
-        const response = ctx.length > 0
-          ? await fetch(url, { method: "POST", cache: "no-store", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contextText: ctx }) })
-          : await fetch(url, { cache: "no-store" });
-        if (response.status === 401) { window.location.href = process.env.NEXT_PUBLIC_REQUIRE_LOGIN === "true" ? "/login" : "/upload"; return; }
-        if (!response.ok) { setRankUi(null); return; }
-        if (!active) return;
-        const payload = (await response.json()) as RankResponse;
-        setRankUi(payload);
-        const ranked = Array.isArray(payload.ranked) ? payload.ranked : [];
-        setSelectedDocIds((prev) => prev.length === 2 ? prev : ranked.slice(0, 2).map((d) => d.id));
-      } catch { setRankUi(null); }
-    }
-    loadRank();
+        if (isMultiDoc) {
+          const [hiringRes, rankRes] = await Promise.all([
+            jd.length > 0
+              ? fetch(`/api/sessions/${sessionId}/hiring-ui?lens=hiring`, { method: "POST", cache: "no-store", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ jdText: jd }) })
+              : fetch(`/api/sessions/${sessionId}/hiring-ui?lens=hiring`, { cache: "no-store" }),
+            jd.length > 0
+              ? fetch(`/api/sessions/${sessionId}/rank?lens=${lens}`, { method: "POST", cache: "no-store", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contextText: jd }) })
+              : fetch(`/api/sessions/${sessionId}/rank?lens=${lens}`, { cache: "no-store" })
+          ]);
+          if (!active) return;
+          if (hiringRes.status === 401 || rankRes.status === 401) {
+            window.location.href = process.env.NEXT_PUBLIC_REQUIRE_LOGIN === "true" ? "/login" : "/upload";
+            return;
+          }
+          const [hiringPayload, rankPayload] = await Promise.all([
+            hiringRes.ok ? (hiringRes.json() as Promise<HiringUiResponse>) : null,
+            rankRes.ok ? (rankRes.json() as Promise<RankResponse>) : null
+          ]);
+          if (!active) return;
+          setHiringUi(hiringPayload ?? null);
+          setRankUi(rankPayload ?? null);
+          if (rankPayload?.ranked?.length) {
+            const ranked = rankPayload.ranked;
+            setSelectedDocIds((prev) => prev.length === 2 ? prev : ranked.slice(0, 2).map((d) => d.id));
+          }
+        } else {
+          const response = jd.length > 0
+            ? await fetch(`/api/sessions/${sessionId}/hiring-ui?lens=hiring`, { method: "POST", cache: "no-store", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ jdText: jd }) })
+            : await fetch(`/api/sessions/${sessionId}/hiring-ui?lens=hiring`, { cache: "no-store" });
+          if (!active) return;
+          if (response.status === 401) {
+            window.location.href = process.env.NEXT_PUBLIC_REQUIRE_LOGIN === "true" ? "/login" : "/upload";
+            return;
+          }
+          setHiringUi(response.ok ? ((await response.json()) as HiringUiResponse) : null);
+          setRankUi(null);
+        }
+      } catch {
+        if (active) {
+          setHiringUi(null);
+          setRankUi(null);
+        }
+      }
+    })();
     return () => { active = false; };
-  }, [data?.status, data?.documents?.length, debouncedJd, lens, sessionId, jdSettleDone]);
+  }, [sessionId, debouncedJd, data?.status, data?.documents?.length, jdSettleDone, lens]);
 
   async function handleExportExcel() {
     setExportError(null); setIsExporting(true);
@@ -721,8 +731,8 @@ export default function ComparePage() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="animate-fade-in">
-          <h1 className="text-2xl font-bold text-slate-900 sm:text-3xl">Resume Comparison</h1>
-          <p className="mt-2 text-sm text-slate-600 sm:text-base">
+          <h1 className="text-2xl font-bold text-white sm:text-3xl">Resume Comparison</h1>
+          <p className="mt-2 text-sm text-zinc-300 sm:text-base">
             {data?.documents && data.documents.length > 2 ? "🎯 All uploaded candidates ranked and analyzed" : "⚖️ Side-by-side candidate comparison"}
           </p>
         </div>
@@ -887,7 +897,32 @@ export default function ComparePage() {
       {!sessionId ? (
         <div className="rounded border border-slate-200 bg-white p-6 text-sm text-slate-600">Invalid session. Please go back to the upload page.</div>
       ) : !data ? (
-        <div className="rounded border border-slate-200 bg-white p-6 text-sm text-slate-600">Loading comparison data...</div>
+        <div className="flex flex-col gap-6 animate-pulse" role="status" aria-label="Loading comparison">
+          <div className="rounded-xl border border-white/10 bg-white/5 p-5">
+            <div className="flex gap-4">
+              <div className="h-10 w-10 shrink-0 rounded-lg bg-white/10" />
+              <div className="flex-1 space-y-2">
+                <div className="h-5 w-3/4 rounded bg-white/10" />
+                <div className="h-4 w-full max-w-md rounded bg-white/5" />
+              </div>
+            </div>
+          </div>
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
+            <div className="mb-4 flex items-center gap-3">
+              <div className="h-8 w-8 rounded-lg bg-white/10" />
+              <div className="h-5 w-40 rounded bg-white/10" />
+            </div>
+            <div className="h-4 w-full rounded bg-white/5 mb-2" />
+            <div className="h-4 w-2/3 max-w-lg rounded bg-white/5" />
+          </div>
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
+            <div className="space-y-4">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="h-14 rounded-lg bg-white/5" />
+              ))}
+            </div>
+          </div>
+        </div>
       ) : (
         <div className="flex flex-col gap-6">
 

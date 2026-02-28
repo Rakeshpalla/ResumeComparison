@@ -119,20 +119,23 @@ export default function FeedbackPage() {
   };
 
   return (
-    <div className="mx-auto max-w-xl py-8">
-      <div className="mb-8">
-        <Link href="/" className="text-sm font-medium text-indigo-600 hover:text-indigo-700">
-          ← Back to app
+    <div className="mx-auto max-w-xl py-6">
+      <div className="mb-6">
+        <Link href="/" className="inline-flex items-center gap-1.5 text-sm font-medium text-indigo-400 transition-colors hover:text-indigo-300">
+          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+          </svg>
+          Back to app
         </Link>
-        <h1 className="mt-4 text-2xl font-bold text-slate-900">Product feedback</h1>
-        <p className="mt-1 text-slate-600">Help us improve the Resume Comparison Engine.</p>
+        <h1 className="mt-4 font-display text-2xl font-bold text-white">Product feedback</h1>
+        <p className="mt-1 text-zinc-400">Help us improve the Resume Comparison Engine.</p>
       </div>
 
       <ProgressBar step={step} total={TOTAL_STEPS} />
 
       <form
         onSubmit={handleSubmit(onSubmit)}
-        className="mt-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8"
+        className="mt-6 rounded-2xl border border-white/10 bg-zinc-900/50 p-6 backdrop-blur-sm sm:p-8"
       >
         {step === 1 && <StepOne control={control} errors={errors} />}
         {step === 2 && <StepTwo control={control} errors={errors} />}
@@ -141,7 +144,7 @@ export default function FeedbackPage() {
         {step === 5 && <StepFive control={control} errors={errors} />}
 
         {submitError && (
-          <div className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">{submitError}</div>
+          <div className="mt-4 rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-300">{submitError}</div>
         )}
 
         <div className="mt-8 flex flex-wrap items-center gap-3">
@@ -149,7 +152,7 @@ export default function FeedbackPage() {
             <button
               type="button"
               onClick={onBack}
-              className="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              className="rounded-lg border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-white/10"
             >
               Back
             </button>
@@ -159,7 +162,7 @@ export default function FeedbackPage() {
               type="button"
               onClick={onNext}
               disabled={!canGoNext}
-              className="rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-60"
+              className="rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-indigo-500 disabled:opacity-50"
             >
               Next
             </button>
@@ -167,7 +170,7 @@ export default function FeedbackPage() {
             <button
               type="submit"
               disabled={submitting}
-              className="rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-60"
+              className="rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-indigo-500 disabled:opacity-50"
             >
               {submitting ? (
                 <span className="inline-flex items-center gap-2">

@@ -28,21 +28,21 @@ export function SummaryCards({ rows }: { rows: FeedbackRow[] }) {
 
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-      <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-        <p className="text-sm font-medium text-slate-500">Total responses</p>
-        <p className="mt-1 text-2xl font-bold text-slate-900">{total}</p>
+      <div className="rounded-xl border border-white/10 bg-zinc-900/50 p-4">
+        <p className="text-sm font-medium text-zinc-400">Total responses</p>
+        <p className="mt-1 text-2xl font-bold text-white">{total}</p>
       </div>
-      <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-        <p className="text-sm font-medium text-slate-500">Avg. usefulness (★)</p>
-        <p className="mt-1 text-2xl font-bold text-slate-900">{avgUsefulness}</p>
+      <div className="rounded-xl border border-white/10 bg-zinc-900/50 p-4">
+        <p className="text-sm font-medium text-zinc-400">Avg. usefulness (★)</p>
+        <p className="mt-1 text-2xl font-bold text-white">{avgUsefulness}</p>
       </div>
-      <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-        <p className="text-sm font-medium text-slate-500">Would recommend (yes %)</p>
-        <p className="mt-1 text-2xl font-bold text-slate-900">{npsPct}%</p>
+      <div className="rounded-xl border border-white/10 bg-zinc-900/50 p-4">
+        <p className="text-sm font-medium text-zinc-400">Would recommend (yes %)</p>
+        <p className="mt-1 text-2xl font-bold text-white">{npsPct}%</p>
       </div>
-      <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-        <p className="text-sm font-medium text-slate-500">Top missing feature</p>
-        <p className="mt-1 text-lg font-bold text-slate-900 truncate" title={topMissing}>{topMissing}</p>
+      <div className="rounded-xl border border-white/10 bg-zinc-900/50 p-4">
+        <p className="text-sm font-medium text-zinc-400">Top missing feature</p>
+        <p className="mt-1 text-lg font-bold text-white truncate" title={topMissing}>{topMissing}</p>
       </div>
     </div>
   );

@@ -19,10 +19,10 @@ type Props = {
 export function StepFour({ control, errors }: Props) {
   return (
     <div className="animate-fade-in space-y-6">
-      <h2 className="text-xl font-semibold text-slate-900">Help us build what you actually need</h2>
+      <h2 className="text-lg font-semibold text-white">Help us build what you actually need</h2>
 
       <div>
-        <label className="mb-2 block text-sm font-medium text-slate-700">
+        <label className="mb-2 block text-sm font-medium text-zinc-300">
           What&apos;s currently missing that would make this tool indispensable?
         </label>
         <Controller
@@ -45,7 +45,7 @@ export function StepFour({ control, errors }: Props) {
         render={({ field }) =>
           field.value.includes(SOMETHING_ELSE) ? (
             <div>
-              <label htmlFor="missing_other" className="mb-2 block text-sm font-medium text-slate-700">
+              <label htmlFor="missing_other" className="mb-2 block text-sm font-medium text-zinc-300">
                 Something else (please specify)
               </label>
               <Controller
@@ -56,7 +56,7 @@ export function StepFour({ control, errors }: Props) {
                     id="missing_other"
                     type="text"
                     maxLength={200}
-                    className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-slate-900"
+                    className="w-full rounded-lg border border-white/10 bg-zinc-800 px-4 py-2.5 text-white placeholder:text-zinc-500"
                     placeholder="e.g. Custom scoring weights"
                     {...f}
                   />
@@ -70,7 +70,7 @@ export function StepFour({ control, errors }: Props) {
       />
 
       <div>
-        <label htmlFor="open_feedback" className="mb-2 block text-sm font-medium text-slate-700">
+        <label htmlFor="open_feedback" className="mb-2 block text-sm font-medium text-zinc-300">
           Anything else you&apos;d like us to know or build? (optional)
         </label>
         <Controller
@@ -83,12 +83,12 @@ export function StepFour({ control, errors }: Props) {
               rows={3}
               maxLength={400}
               placeholder="Your idea, complaint, or feature request…"
-              className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-slate-900 placeholder:text-slate-400"
+              className="w-full rounded-lg border border-white/10 bg-zinc-800 px-4 py-2.5 text-white placeholder:text-zinc-500"
               {...field}
             />
           )}
         />
-        {errors.open_feedback && <p className="mt-1 text-sm text-red-600">{errors.open_feedback.message}</p>}
+        {errors.open_feedback && <p className="mt-1 text-sm text-red-400">{errors.open_feedback.message}</p>}
       </div>
     </div>
   );

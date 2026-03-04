@@ -368,9 +368,9 @@ export default function UploadPage() {
             <input
               id="resume-file-input"
               ref={fileInputRef}
-              className="hidden"
+              className="sr-only"
               type="file"
-              accept="application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+              accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
               multiple
               onChange={(event) => {
                 const files = event.target.files;

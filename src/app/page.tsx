@@ -5,10 +5,9 @@ import HeroSection from "@/components/landing/HeroSection";
 import LandingLenis from "@/components/landing/LandingLenis";
 
 // Lazy-load below-the-fold sections for faster initial load
-const ProblemSection = dynamic(() => import("@/components/landing/ProblemSection"), { ssr: true });
 const HowItWorks = dynamic(() => import("@/components/landing/HowItWorks"), { ssr: true });
 const FeaturesGrid = dynamic(() => import("@/components/landing/FeaturesGrid"), { ssr: true });
-const SocialProof = dynamic(() => import("@/components/landing/SocialProof"), { ssr: true });
+const TrustStrip = dynamic(() => import("@/components/landing/TrustStrip"), { ssr: true });
 const FinalCTA = dynamic(() => import("@/components/landing/FinalCTA"), { ssr: true });
 const LandingFooter = dynamic(() => import("@/components/landing/LandingFooter"), { ssr: true });
 
@@ -22,12 +21,11 @@ export default function HomePage() {
   return (
     <LandingLenis>
       <CustomCursor />
-      <main className="bg-[#1d1d1f]">
+      <main className="overflow-x-hidden bg-[#1d1d1f]">
         <HeroSection />
-        <ProblemSection />
         <HowItWorks />
         <FeaturesGrid />
-        <SocialProof />
+        <TrustStrip />
         <FinalCTA />
         <LandingFooter />
       </main>

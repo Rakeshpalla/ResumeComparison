@@ -5,10 +5,11 @@ import { motion } from "framer-motion";
 
 export default function FinalCTA() {
   return (
-    <section className="relative overflow-hidden bg-[#1d1d1f] py-20">
-      {/* Background effects */}
+    <section className="relative overflow-hidden border-t border-white/[0.06] bg-[#1d1d1f] py-24 sm:py-28">
+      {/* Background: soft glow + vignette */}
       <div className="pointer-events-none absolute inset-0">
-        <div className="absolute left-1/2 top-1/2 h-[500px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-indigo-500/10 blur-[100px]" />
+        <div className="absolute left-1/2 top-1/2 h-[min(90vw,560px)] w-[min(90vw,560px)] -translate-x-1/2 -translate-y-1/2 rounded-full bg-indigo-500/[0.12] blur-[100px]" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#1d1d1f] via-transparent to-[#1d1d1f]/90" />
       </div>
 
       <div className="relative z-10 mx-auto max-w-4xl px-6 text-center">

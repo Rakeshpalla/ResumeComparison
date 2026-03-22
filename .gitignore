@@ -8,6 +8,9 @@ node_modules/
 /playwright-report
 /test-results
 
+# TypeScript
+*.tsbuildinfo
+
 # Next.js
 /.next/
 /out/

@@ -11,17 +11,10 @@ const TrustStrip = dynamic(() => import("@/components/landing/TrustStrip"), { ss
 const FinalCTA = dynamic(() => import("@/components/landing/FinalCTA"), { ssr: true });
 const LandingFooter = dynamic(() => import("@/components/landing/LandingFooter"), { ssr: true });
 
-// Defer custom cursor so it doesn't compete with hero paint
-const CustomCursor = dynamic(
-  () => import("@/components/landing/CustomCursor"),
-  { ssr: false, loading: () => null }
-);
-
 export default function HomePage() {
   return (
     <LandingLenis>
-      <CustomCursor />
-      <main className="overflow-x-hidden bg-[#1d1d1f]">
+      <main className="overflow-x-hidden bg-white">
         <HeroSection />
         <HowItWorks />
         <FeaturesGrid />

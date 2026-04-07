@@ -48,13 +48,18 @@ export async function POST(
       select: { status: true }
     });
     return NextResponse.json({ status: updated?.status ?? "COMPLETED" });
-  } catch {
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Processing failed.";
+    console.error("[process] session extraction failed", {
+      sessionId: session.id,
+      error: err instanceof Error ? err.stack || err.message : String(err)
+    });
     await prisma.comparisonSession
       .update({
         where: { id: session.id },
         data: { status: "FAILED" }
       })
       .catch(() => undefined);
-    return NextResponse.json({ status: "FAILED" }, { status: 500 });
+    return NextResponse.json({ status: "FAILED", error: message }, { status: 500 });
   }
 }

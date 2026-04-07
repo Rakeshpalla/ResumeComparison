@@ -72,3 +72,4 @@ Thumbs.db
 /assets/*.png
 /assets/*.jpg
 /assets/*.jpeg
+.vercel

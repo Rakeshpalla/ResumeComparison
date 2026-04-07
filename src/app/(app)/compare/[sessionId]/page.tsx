@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import { DocumentAnalyzer } from "../../../../components/DocumentAnalyzer";
 import { trackComparison, trackExport } from "../../../../lib/analytics-events";
+import { motion } from "framer-motion";
+import type React from "react";
 
 // ─── Feature flags (safe rollback) ─────────────────────────────────────────
 const FEATURE_FLAGS = {
@@ -173,6 +175,175 @@ function contextFitColor(percent: number) {
   if (percent >= 70) return "text-emerald-700";
   if (percent >= 40) return "text-amber-700";
   return "text-red-700";
+}
+
+function formatCandidateName(filename: string) {
+  const base = filename.replace(/\.(pdf|docx)$/i, "");
+  const cleaned = base.replace(/[_\-]+/g, " ").replace(/\s+/g, " ").trim();
+  return cleaned.length > 0 ? cleaned : filename;
+}
+
+function rankBadge(rank: number) {
+  if (rank === 1) return { label: "1st", bg: "from-amber-300 to-yellow-500", shadow: "shadow-amber-300/50" };
+  if (rank === 2) return { label: "2nd", bg: "from-slate-200 to-slate-400", shadow: "shadow-slate-300/40" };
+  if (rank === 3) return { label: "3rd", bg: "from-amber-200 to-orange-400", shadow: "shadow-orange-300/40" };
+  return { label: `#${rank}`, bg: "from-slate-200 to-slate-300", shadow: "shadow-slate-200/30" };
+}
+
+function GlassPanel({
+  children,
+  className = ""
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <div
+      className={[
+        "bg-white/70 backdrop-blur-xl border border-white/40 shadow-[0_20px_50px_rgba(0,0,0,0.05)] rounded-3xl",
+        className
+      ].join(" ")}
+    >
+      {children}
+    </div>
+  );
+}
+
+function CornerGlows() {
+  return (
+    <div className="pointer-events-none absolute inset-0" aria-hidden>
+      <div className="absolute -top-36 -right-40 h-[620px] w-[620px] rounded-full bg-[#EFF6FF] blur-[110px]" />
+      <div className="absolute -bottom-44 -left-44 h-[620px] w-[620px] rounded-full bg-[#F3E8FF] blur-[110px]" />
+    </div>
+  );
+}
+
+function ProgressRing({
+  value,
+  label,
+  size = 92,
+  variant = "auto"
+}: {
+  value: number;
+  label: string;
+  size?: number;
+  /** auto: mint (high fit), rose (low), magnet (mid) */
+  variant?: "auto" | "magnet" | "mint" | "rose";
+}) {
+  const uid = useId().replace(/:/g, "");
+  const radius = Math.round(size * 0.36);
+  const stroke = Math.max(8, Math.round(size * 0.11));
+  const circumference = 2 * Math.PI * radius;
+  const clamped = Math.min(100, Math.max(0, value));
+  const dash = (clamped / 100) * circumference;
+  const gap = circumference - dash;
+  const innerR = Math.max(radius - stroke * 0.35, 1);
+  const innerCirc = 2 * Math.PI * innerR;
+  const innerDash = (clamped / 100) * innerCirc;
+  const innerGap = innerCirc - innerDash;
+
+  const resolved: "magnet" | "mint" | "rose" =
+    variant === "auto"
+      ? clamped >= 70
+        ? "mint"
+        : clamped < 40
+          ? "rose"
+          : "magnet"
+      : variant;
+
+  const gradId = `ringGrad-${uid}`;
+  const glowId = `ringGlow-${uid}`;
+  const tubeId = `ringTube-${uid}`;
+
+  const stops =
+    resolved === "mint"
+      ? (
+          <>
+            <stop offset="0%" stopColor="#34D399" />
+            <stop offset="50%" stopColor="#2DD4BF" />
+            <stop offset="100%" stopColor="#5EEAD4" />
+          </>
+        )
+      : resolved === "rose"
+        ? (
+            <>
+              <stop offset="0%" stopColor="#FB7185" />
+              <stop offset="55%" stopColor="#F43F5E" />
+              <stop offset="100%" stopColor="#E11D48" />
+            </>
+          )
+        : (
+            <>
+              <stop offset="0%" stopColor="#3B82F6" />
+              <stop offset="55%" stopColor="#4F46E5" />
+              <stop offset="100%" stopColor="#6366F1" />
+            </>
+          );
+
+  return (
+    <div className="relative grid place-items-center">
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-hidden>
+        <defs>
+          <linearGradient id={gradId} x1="0" y1="0" x2="1" y2="1">
+            {stops}
+          </linearGradient>
+          <linearGradient id={tubeId} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="white" stopOpacity={0.55} />
+            <stop offset="40%" stopColor="white" stopOpacity={0} />
+            <stop offset="100%" stopColor="black" stopOpacity={0.12} />
+          </linearGradient>
+          <filter id={glowId} x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="3" result="blur" />
+            <feColorMatrix
+              in="blur"
+              type="matrix"
+              values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 0.35 0"
+            />
+          </filter>
+        </defs>
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          stroke="rgba(15,23,42,0.08)"
+          strokeWidth={stroke}
+          fill="none"
+        />
+        {/* Gloss highlight (tube) */}
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={innerR}
+          stroke={`url(#${tubeId})`}
+          strokeWidth={Math.max(2, stroke * 0.25)}
+          strokeLinecap="round"
+          strokeDasharray={`${innerDash} ${innerGap}`}
+          strokeDashoffset={innerCirc * 0.25}
+          fill="none"
+          opacity={0.45}
+        />
+        <motion.circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          stroke={`url(#${gradId})`}
+          strokeWidth={stroke}
+          strokeLinecap="round"
+          strokeDasharray={`${dash} ${gap}`}
+          strokeDashoffset={circumference * 0.25}
+          fill="none"
+          filter={`url(#${glowId})`}
+          initial={{ strokeDasharray: `0 ${circumference}` }}
+          animate={{ strokeDasharray: `${dash} ${gap}` }}
+          transition={{ duration: 0.95, ease: [0.25, 0.46, 0.45, 0.94] }}
+        />
+      </svg>
+      <div className="absolute text-center">
+        <div className="text-lg font-bold tracking-tight text-slate-900">{Math.round(clamped)}%</div>
+        <div className="text-[11px] font-medium text-slate-500">{label}</div>
+      </div>
+    </div>
+  );
 }
 
 /** Recommendation banner styling based on strength */
@@ -548,7 +719,27 @@ export default function ComparePage() {
   const [jobDescription, setJobDescription] = useState<string>("");
   const [isEditingContext, setIsEditingContext] = useState(false);
   const [selectedDocIds, setSelectedDocIds] = useState<string[]>([]);
+  const [spotlightCandidateId, setSpotlightCandidateId] = useState<string | null>(null);
+  const spotlightClearRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const processTriggeredRef = useRef(false);
+
+  const goToCandidateSection = useCallback((candidateId: string, section: "report" | "interview") => {
+    setSelectedDocIds([candidateId]);
+    setSpotlightCandidateId(candidateId);
+    if (spotlightClearRef.current) clearTimeout(spotlightClearRef.current);
+    spotlightClearRef.current = setTimeout(() => setSpotlightCandidateId(null), 6000);
+
+    const domId = section === "report" ? `candidate-report-${candidateId}` : `candidate-interview-${candidateId}`;
+    requestAnimationFrame(() => {
+      document.getElementById(domId)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (spotlightClearRef.current) clearTimeout(spotlightClearRef.current);
+    };
+  }, []);
 
   useEffect(() => { setHiringView("dashboard"); }, []);
 
@@ -727,17 +918,189 @@ export default function ComparePage() {
   const jdStatus = getJdStatus(jobDescription);
 
   return (
-    <div className="flex flex-col gap-6">
-      {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="animate-fade-in">
-          <h1 className="text-2xl font-bold text-white sm:text-3xl">Resume Comparison</h1>
-          <p className="mt-2 text-sm text-zinc-300 sm:text-base">
-            {data?.documents && data.documents.length > 2 ? "🎯 All uploaded candidates ranked and analyzed" : "⚖️ Side-by-side candidate comparison"}
+    <div className="relative">
+      <CornerGlows />
+      <div className="relative mx-auto flex max-w-7xl flex-col gap-6 px-6 py-10">
+        {/* Header */}
+        <GlassPanel className="p-6 sm:p-8">
+          <div className="text-xs font-semibold uppercase tracking-[0.18em] text-indigo-600/80">
+            Resume Comparison Engine
+          </div>
+          <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+            Resume Comparison Results
+          </h1>
+          <p className="mt-2 text-sm font-medium text-slate-600">
+            Immersive candidate analysis for smarter hiring.
           </p>
-        </div>
-        {/* Export Excel / CSV buttons hidden until export flows work as expected */}
-      </div>
+        </GlassPanel>
+
+        {/* Premium dashboard (multi-candidate) */}
+        {rankUi && data?.documents && data.documents.length > 2 && data.status === "COMPLETED" ? (
+          <div className="grid gap-6 lg:grid-cols-12">
+            {/* Ranking sidebar */}
+            <div className="lg:col-span-3">
+              <GlassPanel className="p-6">
+                <div className="text-sm font-bold tracking-tight text-slate-900">Ranking</div>
+                <div className="mt-6 space-y-5">
+                  {rankUi.ranked.slice(0, 3).map((c) => {
+                    const badge = rankBadge(c.rank);
+                    return (
+                      <div key={c.id} className="flex items-center gap-4">
+                        <div
+                          className={[
+                            "grid h-14 w-14 place-items-center rounded-2xl bg-gradient-to-br shadow-lg",
+                            badge.bg,
+                            badge.shadow
+                          ].join(" ")}
+                        >
+                          <div className="text-sm font-bold text-white">{badge.label}</div>
+                        </div>
+                        <div className="min-w-0">
+                          <div className="truncate text-sm font-semibold text-slate-900">
+                            {formatCandidateName(c.filename)}
+                          </div>
+                          <div className="mt-0.5 text-xs font-medium text-slate-600">
+                            Score {c.total} / 30
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </GlassPanel>
+            </div>
+
+            {/* Candidate cards */}
+            <div className="lg:col-span-9">
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                {rankUi.ranked.slice(0, 5).map((c) => {
+                  const badge = rankBadge(c.rank);
+                  return (
+                    <motion.div
+                      key={c.id}
+                      whileHover={{ y: -8, scale: 1.02 }}
+                      transition={{ type: "spring", stiffness: 380, damping: 28 }}
+                    >
+                      <GlassPanel className="relative overflow-hidden p-6">
+                        <div
+                          className="pointer-events-none absolute -right-28 -top-28 h-56 w-56 rounded-full bg-indigo-200/50 blur-[60px]"
+                          aria-hidden
+                        />
+
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="min-w-0">
+                            <div className="truncate text-base font-bold tracking-tight text-slate-900">
+                              {formatCandidateName(c.filename)}
+                            </div>
+                            <div className="mt-1 truncate text-xs font-medium text-slate-600">
+                              {c.filename}
+                            </div>
+                          </div>
+                          <div
+                            className={[
+                              "grid h-11 w-11 place-items-center rounded-2xl bg-gradient-to-br shadow-lg",
+                              badge.bg,
+                              badge.shadow
+                            ].join(" ")}
+                            title={`Rank ${c.rank}`}
+                          >
+                            <span className="text-xs font-bold text-white">{badge.label}</span>
+                          </div>
+                        </div>
+
+                        <div className="mt-5 flex items-center justify-between gap-4">
+                          <ProgressRing value={c.contextFitPercent || 0} label="JD Fit" variant="auto" />
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between">
+                              <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                                Total
+                              </div>
+                              <div className="text-sm font-bold text-slate-900">{c.total}/30</div>
+                            </div>
+                            <div className="mt-2 h-2 w-full rounded-full bg-slate-900/[0.06]">
+                              <div
+                                className="h-2 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600"
+                                style={{ width: `${Math.min(100, Math.max(0, calculateConsistentPercentage(c.total, 30)))}%` }}
+                              />
+                            </div>
+                            <div className="mt-3 flex flex-wrap gap-2 text-xs">
+                              <span className="rounded-full bg-emerald-50 px-2.5 py-1 font-semibold text-emerald-700">
+                                Clarity {c.clarity}/5
+                              </span>
+                              <span className="rounded-full bg-indigo-50 px-2.5 py-1 font-semibold text-indigo-700">
+                                Hygiene {c.riskHygiene}/5
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                          <div>
+                            <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                              Matches
+                            </div>
+                            <div className="mt-2 flex flex-wrap gap-2">
+                              {(c.matchedKeywords?.slice(0, 3) ?? []).map((k) => (
+                                <span
+                                  key={k}
+                                  className="rounded-full border border-emerald-200/60 bg-emerald-50/70 px-2.5 py-1 text-xs font-semibold text-emerald-800 backdrop-blur-sm"
+                                >
+                                  {k}
+                                </span>
+                              ))}
+                              {(!c.matchedKeywords || c.matchedKeywords.length === 0) && (
+                                <span className="rounded-full border border-slate-200/60 bg-white/60 px-2.5 py-1 text-xs font-semibold text-slate-600 backdrop-blur-sm">
+                                  —
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                              Gaps
+                            </div>
+                            <div className="mt-2 flex flex-wrap gap-2">
+                              {(c.missingKeywords?.slice(0, 2) ?? []).map((k) => (
+                                <span
+                                  key={k}
+                                  className="rounded-full border border-rose-200/60 bg-rose-50/70 px-2.5 py-1 text-xs font-semibold text-rose-800 backdrop-blur-sm"
+                                >
+                                  {k}
+                                </span>
+                              ))}
+                              {(!c.missingKeywords || c.missingKeywords.length === 0) && (
+                                <span className="rounded-full border border-slate-200/60 bg-white/60 px-2.5 py-1 text-xs font-semibold text-slate-600 backdrop-blur-sm">
+                                  —
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="mt-6 grid gap-2">
+                          <button
+                            type="button"
+                            className="inline-flex w-full items-center justify-center rounded-xl bg-gradient-to-b from-blue-500 to-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_18px_45px_-18px_rgba(37,99,235,0.55)]"
+                            onClick={() => goToCandidateSection(c.id, "report")}
+                          >
+                            View Detailed Report
+                          </button>
+                          <button
+                            type="button"
+                            className="inline-flex w-full items-center justify-center rounded-xl border border-white/40 bg-white/60 px-4 py-2.5 text-sm font-semibold text-slate-900 backdrop-blur-xl"
+                            onClick={() => goToCandidateSection(c.id, "interview")}
+                          >
+                            Interview Prep
+                          </button>
+                        </div>
+                      </GlassPanel>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        ) : null}
 
       {/* Job description status: none or limited */}
       {(jdStatus === "none" || jdStatus === "limited") && (
@@ -1011,7 +1374,15 @@ export default function ComparePage() {
                       return validatedCandidates.flatMap((doc, idx) => {
                         const nextDoc = validatedCandidates[idx + 1];
                         return [
-                          <tr key={doc.id} className={`border-b border-slate-100 align-top transition-colors hover:bg-slate-50 ${idx === 0 ? "bg-indigo-50/30" : ""}`}>
+                          <tr
+                            key={doc.id}
+                            id={`candidate-report-${doc.id}`}
+                            className={[
+                              "border-b border-slate-100 align-top transition-colors hover:bg-slate-50 scroll-mt-28",
+                              idx === 0 ? "bg-indigo-50/30" : "",
+                              spotlightCandidateId === doc.id ? "bg-indigo-100/70 ring-2 ring-inset ring-indigo-400/60" : ""
+                            ].join(" ")}
+                          >
                             <td className="px-4 py-4">
                               <div className={`inline-flex h-10 w-10 items-center justify-center rounded-xl font-bold text-white shadow-sm ${doc.rank === 1 ? "bg-gradient-to-br from-emerald-500 to-green-600" : doc.rank === 2 ? "bg-gradient-to-br from-teal-500 to-cyan-600" : "bg-gradient-to-br from-slate-400 to-slate-500"}`}>
                                 #{doc.rank}
@@ -1095,7 +1466,7 @@ export default function ComparePage() {
                                 ))}
                               </div>
                             </div>
-                            <div>
+                            <div id={`candidate-interview-${doc.id}`} className="scroll-mt-28">
                               <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Interview questions</div>
                               <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-slate-700">{doc.interviewKit.verifyQuestions.slice(0, 2).map((q) => <li key={q}>{q}</li>)}</ul>
                             </div>
@@ -1316,6 +1687,7 @@ export default function ComparePage() {
           ) : null}
         </div>
       )}
+      </div>
     </div>
   );
 }

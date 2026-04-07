@@ -17,22 +17,36 @@ export function attachConsoleErrorFail(page: Page) {
 }
 
 export async function registerAndGoToUpload(page: Page) {
-  const email = `e2e+${Date.now()}-${Math.random().toString(16).slice(2)}@example.com`;
-  const password = "TestPass!234";
+  // Most deployments run in guest mode; /upload should be accessible.
+  // If the app redirects to /login (auth-required mode), fall back to UI registration.
+  await page.goto("/upload");
+  await page.waitForLoadState("domcontentloaded");
 
-  await page.goto("/login");
-  await page.getByRole("button", { name: /create an account/i }).click();
+  if (page.url().includes("/login")) {
+    const email = `e2e+${Date.now()}-${Math.random().toString(16).slice(2)}@example.com`;
+    const password = "TestPass!234";
 
-  await page.getByPlaceholder("you@company.com").fill(email);
-  await page.getByPlaceholder("••••••••").fill(password);
-  await page.getByRole("button", { name: /create your account/i }).click();
+    await page.getByRole("button", { name: /create an account/i }).click();
+    await page.getByPlaceholder("you@company.com").fill(email);
+    await page.getByPlaceholder("••••••••").fill(password);
+    await page.getByRole("button", { name: /create your account/i }).click();
+    await expect(page).toHaveURL(/\/upload$/);
+  }
 
-  await expect(page).toHaveURL(/\/upload$/);
+  await expect(page.getByRole("heading", { name: "Upload Resumes", exact: true })).toBeVisible();
 }
 
 export async function logout(page: Page) {
-  await page.getByRole("button", { name: /sign out/i }).click();
-  await expect(page).toHaveURL(/\/login$/);
+  // In guest-only mode there may be no visible "Sign out" UI.
+  const signOutButton = page.getByRole("button", { name: /sign out/i });
+  if (await signOutButton.count()) {
+    await signOutButton.first().click();
+  } else {
+    // Clear-Site-Data only applies on navigations, so use a real navigation to the logout route.
+    await page.goto("/api/auth/logout");
+  }
+
+  await expect(page).toHaveURL(/\/(login|upload)$/);
 }
 
 export async function makePdfFixture(text: string, filename: string) {

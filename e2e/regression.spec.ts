@@ -11,7 +11,7 @@ test("regression: logout clears user-local state (context textarea)", async ({ p
   const assertNoConsoleErrors = attachConsoleErrorFail(page);
 
   await registerAndGoToUpload(page);
-  const context = page.getByPlaceholder(/paste jd/i);
+  const context = page.getByPlaceholder(/paste the job description/i);
   await context.fill("E2E context should not persist after logout");
   await expect(context).toHaveValue(/E2E context/);
 
@@ -20,7 +20,7 @@ test("regression: logout clears user-local state (context textarea)", async ({ p
   // Sign in again (new user) and verify storage cleared (textarea starts empty).
   // We create a fresh account to keep tests isolated from DB cleanup needs.
   await registerAndGoToUpload(page);
-  await expect(page.getByPlaceholder(/paste jd/i)).toHaveValue("");
+  await expect(page.getByPlaceholder(/paste the job description/i)).toHaveValue("");
 
   await assertNoConsoleErrors();
 });
@@ -43,7 +43,7 @@ test("golden path: upload 2 docs → generate insights → view compare dashboar
   // Hidden file input still exists; Playwright can set files even if hidden.
   await page.locator('input[type="file"]').setInputFiles([a, b]);
 
-  await page.getByRole("button", { name: /generate insights/i }).click();
+  await page.getByRole("button", { name: /(generate insights|generate analysis)/i }).click();
 
   await expect(page).toHaveURL(/\/compare\//, { timeout: 120_000 });
   await expect(page.getByRole("heading", { name: /resume comparison/i })).toBeVisible({
@@ -66,7 +66,7 @@ test("regression: multi-tab logout invalidates protected routes after refresh", 
 
   await registerAndGoToUpload(page1);
   await page2.goto("/upload");
-  await expect(page2.getByRole("heading", { name: /upload documents/i })).toBeVisible();
+  await expect(page2.getByRole("heading", { name: "Upload Resumes", exact: true })).toBeVisible();
 
   await logout(page1);
 

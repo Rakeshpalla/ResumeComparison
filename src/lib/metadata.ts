@@ -29,6 +29,14 @@ const KEYWORDS = [
   "resume scoring",
   "resume comparison for hiring",
   "compare candidate resumes",
+  "AI resume screening",
+  "Hire Signal",
+  "resume stack rank",
+  "bulk resume review",
+  "PDF resume compare",
+  "DOCX resume compare",
+  "job description resume match",
+  "talent acquisition software",
 ];
 
 const TITLE_MAX_LENGTH = 60;
@@ -77,16 +85,31 @@ export function buildMetadata(params: {
   if (process.env.GOOGLE_VERIFICATION_CODE) {
     verification.google = process.env.GOOGLE_VERIFICATION_CODE;
   }
+  if (process.env.YANDEX_VERIFICATION_CODE) {
+    verification.yandex = process.env.YANDEX_VERIFICATION_CODE;
+  }
+  const verificationOther: Record<string, string> = {};
   if (process.env.BING_VERIFICATION_CODE) {
-    verification.other = { "msvalidate.01": process.env.BING_VERIFICATION_CODE };
+    verificationOther["msvalidate.01"] = process.env.BING_VERIFICATION_CODE;
+  }
+  if (process.env.PINTEREST_VERIFICATION_CODE) {
+    verificationOther["p:domain_verify"] = process.env.PINTEREST_VERIFICATION_CODE;
+  }
+  if (Object.keys(verificationOther).length > 0) {
+    verification.other = verificationOther;
   }
 
   return {
     title: metaTitle,
     description: metaDescription,
+    applicationName: SITE_NAME,
     keywords: keywords,
+    category: "technology",
     authors: [{ name: SITE_NAME, url: baseUrl }],
     creator: SITE_NAME,
+    publisher: SITE_NAME,
+    formatDetection: { telephone: false, address: false, email: false },
+    referrer: "origin-when-cross-origin",
     alternates: path !== undefined ? { canonical: url } : undefined,
     openGraph: {
       title: title,

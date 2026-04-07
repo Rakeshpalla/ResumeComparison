@@ -70,7 +70,14 @@ async function processOneDocument(
       data: { status: "EXTRACTED" }
     });
     return { success: true };
-  } catch {
+  } catch (err) {
+    console.error("[extract] document failed", {
+      sessionId,
+      documentId: document.id,
+      mimeType: document.mimeType,
+      s3Key: document.s3Key,
+      error: err instanceof Error ? err.message : String(err)
+    });
     await prisma.document.update({
       where: { id: document.id },
       data: { status: "FAILED" }

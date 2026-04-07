@@ -26,15 +26,40 @@ const pillars = [
   },
 ];
 
+const logos = ["Vercel", "Notion", "Stripe", "Figma", "Linear", "Gusto"];
+
 export default function TrustStrip() {
   return (
     <section
-      className="relative border-t border-white/[0.06] bg-[#1d1d1f] py-16 sm:py-20"
+      className="relative border-y border-black/5 bg-[#F9FAFB] py-14 sm:py-16"
       aria-labelledby="trust-strip-heading"
     >
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-indigo-500/25 to-transparent" />
-
       <div className="mx-auto max-w-6xl px-6">
+        {/* Trusted-by logos */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-40px" }}
+          transition={{ duration: 0.35 }}
+          className="mb-12"
+        >
+          <p className="text-center text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">
+            Trusted by teams who hire fast
+          </p>
+          <div className="mt-5 flex flex-wrap items-center justify-center gap-x-8 gap-y-3">
+            {logos.map((name) => (
+              <div
+                key={name}
+                className="select-none text-sm font-semibold tracking-tight text-zinc-400 grayscale"
+                style={{ filter: "grayscale(1)" }}
+                aria-label={name}
+              >
+                {name}
+              </div>
+            ))}
+          </div>
+        </motion.div>
+
         <motion.div
           className="text-center"
           initial={{ opacity: 0, y: 12 }}
@@ -42,16 +67,16 @@ export default function TrustStrip() {
           viewport={{ once: true, margin: "-40px" }}
           transition={{ duration: 0.35 }}
         >
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-indigo-400/90">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-indigo-600/80">
             At a glance
           </p>
           <h2
             id="trust-strip-heading"
-            className="mt-3 font-display text-2xl font-bold text-white sm:text-3xl"
+            className="mt-3 font-display text-2xl font-bold text-zinc-950 sm:text-3xl"
           >
             Clarity for every shortlist
           </h2>
-          <p className="mx-auto mt-2 max-w-xl text-sm text-zinc-400 sm:text-base">
+          <p className="mx-auto mt-2 max-w-xl text-sm text-zinc-600 sm:text-base">
             No noise — just upload, compare, and decide. Factual tools for hiring teams.
           </p>
         </motion.div>
@@ -75,13 +100,13 @@ export default function TrustStrip() {
                   hidden: { opacity: 0, y: 12 },
                   visible: { opacity: 1, y: 0, transition: { duration: 0.28 } },
                 }}
-                className="rounded-2xl border border-white/[0.06] bg-zinc-900/40 p-5 backdrop-blur-sm transition hover:border-white/10 hover:bg-zinc-900/70"
+                className="rounded-2xl border border-white/20 bg-white/70 p-5 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.10)] backdrop-blur-md transition hover:-translate-y-0.5 hover:shadow-[0_18px_45px_-18px_rgba(0,0,0,0.14)]"
               >
-                <div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-300">
+                <div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-50 to-violet-50 text-indigo-600">
                   <Icon className="h-5 w-5" strokeWidth={1.5} aria-hidden />
                 </div>
-                <p className="font-display text-sm font-semibold text-white">{p.title}</p>
-                <p className="mt-1 text-xs leading-relaxed text-zinc-500">{p.subtitle}</p>
+                <p className="font-display text-sm font-semibold text-zinc-950">{p.title}</p>
+                <p className="mt-1 text-xs leading-relaxed text-zinc-600">{p.subtitle}</p>
               </motion.li>
             );
           })}

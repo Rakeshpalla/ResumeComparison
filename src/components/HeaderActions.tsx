@@ -29,20 +29,21 @@ export function HeaderActions() {
   if (!mounted) {
     return (
       <div className="flex items-center gap-3">
-        <div className="h-10 w-24 animate-pulse rounded-lg bg-slate-700" />
+        <div className="h-10 w-24 animate-pulse rounded-lg bg-slate-200" />
       </div>
     );
   }
 
   const path = pathname ?? "";
   const showHomeButton = !path.startsWith("/upload");
+  const requireLogin = process.env.NEXT_PUBLIC_REQUIRE_LOGIN === "true";
 
   return (
     <div className="flex items-center gap-3">
       {showHomeButton && (
         <Link
           href="/"
-          className="group flex items-center gap-2 rounded-xl border border-slate-600 px-4 py-2.5 text-sm font-medium text-slate-200 transition hover:border-slate-500 hover:bg-slate-700/60 hover:text-white"
+          className="group flex items-center gap-2 rounded-xl border border-slate-200 bg-white/60 px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm backdrop-blur-sm transition hover:border-slate-300 hover:bg-white hover:text-slate-900"
         >
           <svg className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
@@ -52,7 +53,7 @@ export function HeaderActions() {
       )}
       <Link
         href="/feedback"
-        className="flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-500/25 transition hover:bg-indigo-500"
+        className="flex items-center gap-2 rounded-xl bg-gradient-to-b from-blue-500 to-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_14px_36px_-12px_rgba(37,99,235,0.45)] transition hover:opacity-95"
         aria-label="Give feedback"
       >
         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -60,36 +61,34 @@ export function HeaderActions() {
         </svg>
         <span>Give feedback</span>
       </Link>
-      {process.env.NEXT_PUBLIC_REQUIRE_LOGIN === "true" && (
-        <button
-          type="button"
-          className="flex items-center gap-2 rounded-xl border border-slate-600 bg-slate-800 px-4 py-2.5 text-sm font-medium text-slate-200 transition hover:border-slate-500 hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60"
-          disabled={isLoggingOut}
-          onClick={async () => {
-            setIsLoggingOut(true);
-            clearClientState();
-            window.location.href = "/api/auth/logout";
-          }}
-        >
-          {isLoggingOut ? (
-            <>
-              <svg className="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              <span>Signing out...</span>
-            </>
-          ) : (
-            <>
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-              </svg>
-              <span className="hidden sm:inline">Sign out</span>
-              <span className="sm:hidden">Exit</span>
-            </>
-          )}
-        </button>
-      )}
+      <button
+        type="button"
+        className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white/70 px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm backdrop-blur-sm transition hover:border-slate-300 hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
+        disabled={isLoggingOut}
+        onClick={async () => {
+          setIsLoggingOut(true);
+          clearClientState();
+          window.location.href = "/api/auth/logout";
+        }}
+      >
+        {isLoggingOut ? (
+          <>
+            <svg className="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span>{requireLogin ? "Signing out..." : "Resetting..."}</span>
+          </>
+        ) : (
+          <>
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+            <span className="hidden sm:inline">{requireLogin ? "Sign out" : "Reset session"}</span>
+            <span className="sm:hidden">{requireLogin ? "Exit" : "Reset"}</span>
+          </>
+        )}
+      </button>
     </div>
   );
 }

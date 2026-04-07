@@ -11,8 +11,11 @@ export function organizationSchema() {
   return {
     "@context": "https://schema.org",
     "@type": "Organization",
+    "@id": `${baseUrl}/#organization`,
     name: SITE_NAME,
+    alternateName: ["Hire Signal", "Resume Comparison Tool"],
     url: baseUrl,
+    logo: `${baseUrl}/icon.png`,
     description: "Free resume comparison tool. Compare 2-5 resumes (PDF/DOCX) side-by-side in minutes. Used by hiring managers and recruiters to shortlist candidates and reduce bias.",
     sameAs: [
       process.env.NEXT_PUBLIC_TWITTER_URL,
@@ -32,14 +35,11 @@ export function webSiteSchema() {
   return {
     "@context": "https://schema.org",
     "@type": "WebSite",
+    "@id": `${baseUrl}/#website`,
     name: SITE_NAME,
     url: baseUrl,
+    inLanguage: "en-US",
     description: "Free resume comparison tool. Upload 2-5 resumes, get side-by-side analysis, scoring, and hiring recommendations in minutes. Trusted by hiring managers and recruiters.",
-    potentialAction: {
-      "@type": "SearchAction",
-      target: { "@type": "EntryPoint", urlTemplate: `${baseUrl}/upload` },
-      "query-input": "required name=search_term_string",
-    },
   };
 }
 
@@ -51,6 +51,7 @@ export function softwareApplicationSchema() {
     name: SITE_NAME,
     applicationCategory: "BusinessApplication",
     operatingSystem: "Web",
+    browserRequirements: "Requires JavaScript. Modern evergreen browser.",
     url: baseUrl,
     description: "Compare 2-5 resumes in minutes. Side-by-side analysis, skills gap detection, scoring, and hiring recommendations. Free. Used by hiring managers and recruiters to shortlist candidates and reduce bias.",
     offers: {

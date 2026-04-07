@@ -1,0 +1,21 @@
+{
+  "name": "Resume Comparison Engine",
+  "short_name": "RCE",
+  "description": "Compare 2–5 resumes side-by-side with scoring and hiring insights. Free resume comparison for recruiters and hiring managers.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#4f46e5",
+  "lang": "en-US",
+  "dir": "ltr",
+  "categories": ["business", "productivity"],
+  "icons": [
+    {
+      "src": "/icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

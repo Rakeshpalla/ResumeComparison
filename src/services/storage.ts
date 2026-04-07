@@ -18,7 +18,8 @@ async function blobPut(key: string, body: Buffer, contentType: string): Promise<
 
 async function blobFetchBuffer(key: string): Promise<Buffer> {
   const { list } = await import("@vercel/blob");
-  const { blobs } = await list({ prefix: key, limit: 1 });
+  // list() is prefix-based; when many keys share prefixes, a tiny limit can miss the exact key.
+  const { blobs } = await list({ prefix: key, limit: 100 });
   const blob = blobs.find((b) => b.pathname === key);
   if (!blob?.url) {
     throw new Error("Blob not found: " + key);
@@ -104,7 +105,7 @@ export async function createSignedDownloadUrl(
 ): Promise<string> {
   if (useVercelBlob()) {
     const { list } = await import("@vercel/blob");
-    const { blobs } = await list({ prefix: key, limit: 1 });
+    const { blobs } = await list({ prefix: key, limit: 100 });
     const blob = blobs.find((b) => b.pathname === key);
     if (!blob?.url) throw new Error("Blob not found: " + key);
     return blob.url;

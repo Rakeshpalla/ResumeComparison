@@ -34,8 +34,21 @@ const KEYWORDS = [
 const TITLE_MAX_LENGTH = 60;
 const DESCRIPTION_MAX_LENGTH = 160;
 
+/**
+ * Production URL: prefer explicit NEXT_PUBLIC_APP_URL (custom domain or stable canonical),
+ * then Vercel's deployment host (updates when the project URL changes), then a safe default.
+ */
 export function getBaseUrl(): string {
-  return process.env.NEXT_PUBLIC_APP_URL || "https://resumemaster-ten.vercel.app";
+  const explicit = process.env.NEXT_PUBLIC_APP_URL?.trim();
+  if (explicit) return explicit.replace(/\/$/, "");
+
+  const vercelHost = process.env.VERCEL_URL?.trim();
+  if (vercelHost) {
+    const host = vercelHost.replace(/^https?:\/\//, "");
+    return `https://${host}`;
+  }
+
+  return "https://hiresignal11.vercel.app";
 }
 
 /**

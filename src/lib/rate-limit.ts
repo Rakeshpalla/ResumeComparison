@@ -22,14 +22,15 @@ type WindowEntry = { count: number; resetAt: number };
 
 const store = new Map<string, WindowEntry>();
 
-function getClientId(request: NextRequest): string {
+function getClientId(request: NextRequest): string | null {
   const forwarded = request.headers.get("x-forwarded-for");
   if (forwarded) {
     return forwarded.split(",")[0].trim();
   }
   const realIp = request.headers.get("x-real-ip");
   if (realIp) return realIp.trim();
-  return "unknown";
+  // No identifiable IP (e.g. local/direct requests) — skip rate limiting
+  return null;
 }
 
 function isRateLimitEnabled(): boolean {
@@ -120,6 +121,7 @@ export function checkRateLimit(
 
   const config = BUCKET_CONFIG[bucket];
   const id = getClientId(request);
+  if (!id) return null; // no identifiable client — skip
   const key = `${bucket}:${id}`;
   const now = Date.now();
 

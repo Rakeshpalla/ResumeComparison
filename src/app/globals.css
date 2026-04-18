@@ -3,12 +3,13 @@
 @tailwind utilities;
 
 :root {
-  color-scheme: dark;
-  --color-primary: 99 102 241;
-  --color-primary-dark: 79 70 229;
-  --color-success: 34 197 94;
-  --color-warning: 234 179 8;
-  --color-error: 239 68 68;
+  color-scheme: light;
+  --color-primary: 99 102 241; /* indigo-500 */
+  --color-primary-dark: 79 70 229; /* indigo-600 */
+  --color-success: 34 197 94; /* green-500 */
+  --color-warning: 234 179 8; /* yellow-500 */
+  --color-error: 239 68 68; /* red-500 */
+  --shadow-raised: 0 4px 6px -2px rgba(0, 0, 0, 0.15), 0 12px 24px -8px rgba(0, 0, 0, 0.25);
 }
 
 * {
@@ -16,9 +17,7 @@
 }
 
 body {
-  /* ~8% lighter than #09090b for better readability */
-  background-color: #1d1d1f;
-  @apply text-zinc-200 antialiased;
+  @apply bg-gradient-to-br from-slate-50 via-indigo-50/30 to-slate-50 text-slate-900 antialiased;
 }
 
 /* Modern input styles */
@@ -48,17 +47,17 @@ html {
   @apply scroll-smooth;
 }
 
-/* Custom scrollbar - dark theme to match default body */
+/* Custom scrollbar */
 ::-webkit-scrollbar {
   @apply w-2 h-2;
 }
 
 ::-webkit-scrollbar-track {
-  @apply bg-slate-800;
+  @apply bg-slate-100;
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-slate-600 rounded-full hover:bg-slate-500;
+  @apply bg-slate-300 rounded-full hover:bg-slate-400;
 }
 
 /* Loading animation */

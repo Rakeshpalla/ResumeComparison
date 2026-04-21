@@ -13,8 +13,18 @@ const FEATURE_FLAGS = {
   SHOW_NEW_BANNER: true,
   SHOW_SPECIFIC_BADGES: true,
   SHOW_CONFIDENCE_INDICATORS: true,
-  SHOW_HOW_WE_RANK: true
+  SHOW_HOW_WE_RANK: true,
+  // Raw "23/30" totals confuse recruiters ("what's the denominator mean?").
+  // Hide the number; surface only the qualitative verdict instead.
+  HIDE_RAW_TOTAL: true,
+  // When the JD has ~no overlap with any resume, refuse to call anyone a
+  // "strong shortlist". Shows an "Off-target" verdict instead.
+  JD_AWARE_VERDICT: true
 };
+
+// Threshold below which we treat the JD as unrelated to the resume.
+// Empirically: typing "astronomy telescope" against PM resumes lands at 0%.
+const JD_RELEVANCE_FLOOR = 20;
 
 type ComparisonRow = {
   key: string;
@@ -163,6 +173,43 @@ function scoreLabel(score: number) {
   if (score === 3) return "Average";
   if (score === 2) return "Weak";
   return "Poor";
+}
+
+// Qualitative verdict for a candidate. Combines resume quality (total)
+// AND job-description relevance so a polished resume for an unrelated role
+// doesn't read as "Strong · Shortlist".
+function candidateVerdict(params: {
+  total: number;
+  contextUsed: boolean;
+  contextFitPercent: number;
+}): { label: string; color: string; blurb: string } {
+  const { total, contextUsed, contextFitPercent } = params;
+
+  // JD-aware gate: if the recruiter provided a JD but this resume doesn't
+  // overlap with it, no amount of resume polish makes this candidate fit.
+  if (FEATURE_FLAGS.JD_AWARE_VERDICT && contextUsed && contextFitPercent < JD_RELEVANCE_FLOOR) {
+    return {
+      label: "Off-target",
+      color: "text-red-700 bg-red-50 border-red-200",
+      blurb: "Doesn't match this JD"
+    };
+  }
+
+  // Lukewarm JD match: cap the verdict at "Fair" no matter how strong the
+  // resume is in absolute terms.
+  if (FEATURE_FLAGS.JD_AWARE_VERDICT && contextUsed && contextFitPercent < 40) {
+    return {
+      label: "Partial match",
+      color: "text-amber-700 bg-amber-50 border-amber-200",
+      blurb: "Weak JD alignment"
+    };
+  }
+
+  if (total >= 24) return { label: "Strong", color: "text-emerald-700 bg-emerald-50 border-emerald-200", blurb: "Shortlist" };
+  if (total >= 20) return { label: "Good", color: "text-teal-700 bg-teal-50 border-teal-200", blurb: "Interview" };
+  if (total >= 16) return { label: "Fair", color: "text-amber-700 bg-amber-50 border-amber-200", blurb: "Borderline" };
+  if (total >= 12) return { label: "Weak", color: "text-orange-700 bg-orange-50 border-orange-200", blurb: "Probably pass" };
+  return { label: "Very weak", color: "text-red-700 bg-red-50 border-red-200", blurb: "Pass" };
 }
 
 function riskBadge(level: "High" | "Medium" | "Low") {
@@ -702,6 +749,69 @@ function HowWeRankExplanation({ initiallyExpanded = false }: { initiallyExpanded
   );
 }
 
+// ─── Results loading skeleton ────────────────────────────────────────────────
+
+function SkeletonBox({ className = "" }: { className?: string }) {
+  return <div className={`animate-pulse rounded bg-slate-200 ${className}`} />;
+}
+
+function ResultsSkeleton({ count = 3 }: { count?: number }) {
+  const cols = Math.min(count, 5);
+  return (
+    <div className="flex flex-col gap-5" role="status" aria-label="Loading results">
+      {/* Recommendation banner placeholder */}
+      <div className="animate-pulse rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="flex items-start gap-4">
+          <SkeletonBox className="h-8 w-8 shrink-0 rounded-lg" />
+          <div className="flex-1 space-y-2">
+            <SkeletonBox className="h-5 w-2/5" />
+            <SkeletonBox className="h-4 w-4/5" />
+            <SkeletonBox className="h-4 w-3/5" />
+          </div>
+        </div>
+      </div>
+
+      {/* Candidate card placeholders */}
+      <div className={`grid gap-4 ${cols >= 3 ? "lg:grid-cols-3" : "sm:grid-cols-2"}`}>
+        {Array.from({ length: cols }).map((_, i) => (
+          <div key={i} className="animate-pulse rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            {/* Rank badge + name */}
+            <div className="mb-4 flex items-center gap-3">
+              <SkeletonBox className="h-10 w-10 rounded-full" />
+              <div className="flex-1 space-y-2">
+                <SkeletonBox className="h-4 w-3/4" />
+                <SkeletonBox className="h-3 w-1/2" />
+              </div>
+            </div>
+            {/* Verdict badge */}
+            <SkeletonBox className="mb-4 h-7 w-28 rounded-full" />
+            {/* JD Fit ring placeholder */}
+            <div className="mb-4 flex justify-center">
+              <SkeletonBox className="h-20 w-20 rounded-full" />
+            </div>
+            {/* Dimension bars */}
+            <div className="space-y-2">
+              {[1, 2, 3, 4].map((j) => (
+                <div key={j} className="flex items-center gap-3">
+                  <SkeletonBox className="h-3 w-24 shrink-0" />
+                  <SkeletonBox className="h-2 flex-1 rounded-full" />
+                </div>
+              ))}
+            </div>
+            {/* Action buttons */}
+            <div className="mt-5 space-y-2">
+              <SkeletonBox className="h-9 w-full rounded-xl" />
+              <SkeletonBox className="h-9 w-full rounded-xl" />
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <span className="sr-only">Ranking candidates, please wait…</span>
+    </div>
+  );
+}
+
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export default function ComparePage() {
@@ -959,9 +1069,23 @@ export default function ComparePage() {
                           <div className="truncate text-sm font-semibold text-slate-900">
                             {formatCandidateName(c.filename)}
                           </div>
-                          <div className="mt-0.5 text-xs font-medium text-slate-600">
-                            Score {c.total} / 30
-                          </div>
+                          {!FEATURE_FLAGS.HIDE_RAW_TOTAL && (
+                            <div className="mt-0.5 text-xs font-medium text-slate-600">
+                              Score {c.total} / 30
+                            </div>
+                          )}
+                          {FEATURE_FLAGS.HIDE_RAW_TOTAL && (() => {
+                            const v = candidateVerdict({
+                              total: c.total,
+                              contextUsed: rankUi.contextUsed,
+                              contextFitPercent: c.contextFitPercent
+                            });
+                            return (
+                              <div className={`mt-0.5 inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold ${v.color}`}>
+                                {v.label}
+                              </div>
+                            );
+                          })()}
                         </div>
                       </div>
                     );
@@ -1011,24 +1135,41 @@ export default function ComparePage() {
                         <div className="mt-5 flex items-center justify-between gap-4">
                           <ProgressRing value={c.contextFitPercent || 0} label="JD Fit" variant="auto" />
                           <div className="flex-1">
-                            <div className="flex items-center justify-between">
-                              <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                                Total
+                            {(() => {
+                              const v = candidateVerdict({
+                                total: c.total,
+                                contextUsed: rankUi.contextUsed,
+                                contextFitPercent: c.contextFitPercent
+                              });
+                              return (
+                                <div className="flex items-center justify-between">
+                                  <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                                    {FEATURE_FLAGS.HIDE_RAW_TOTAL ? "Verdict" : "Total"}
+                                  </div>
+                                  {FEATURE_FLAGS.HIDE_RAW_TOTAL ? (
+                                    <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold ${v.color}`}>
+                                      {v.label}
+                                    </span>
+                                  ) : (
+                                    <div className="text-sm font-bold text-slate-900">{c.total}/30</div>
+                                  )}
+                                </div>
+                              );
+                            })()}
+                            {!FEATURE_FLAGS.HIDE_RAW_TOTAL && (
+                              <div className="mt-2 h-2 w-full rounded-full bg-slate-900/[0.06]">
+                                <div
+                                  className="h-2 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600"
+                                  style={{ width: `${Math.min(100, Math.max(0, calculateConsistentPercentage(c.total, 30)))}%` }}
+                                />
                               </div>
-                              <div className="text-sm font-bold text-slate-900">{c.total}/30</div>
-                            </div>
-                            <div className="mt-2 h-2 w-full rounded-full bg-slate-900/[0.06]">
-                              <div
-                                className="h-2 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600"
-                                style={{ width: `${Math.min(100, Math.max(0, calculateConsistentPercentage(c.total, 30)))}%` }}
-                              />
-                            </div>
+                            )}
                             <div className="mt-3 flex flex-wrap gap-2 text-xs">
-                              <span className="rounded-full bg-emerald-50 px-2.5 py-1 font-semibold text-emerald-700">
-                                Clarity {c.clarity}/5
+                              <span className="rounded-full bg-emerald-50 px-2.5 py-1 font-semibold text-emerald-700" title="Structure & clarity of the resume">
+                                Structure {c.clarity}/5
                               </span>
-                              <span className="rounded-full bg-indigo-50 px-2.5 py-1 font-semibold text-indigo-700">
-                                Hygiene {c.riskHygiene}/5
+                              <span className="rounded-full bg-indigo-50 px-2.5 py-1 font-semibold text-indigo-700" title="Risk hygiene — higher is safer">
+                                Safety {c.riskHygiene}/5
                               </span>
                             </div>
                           </div>
@@ -1297,6 +1438,8 @@ export default function ComparePage() {
                 subtitle="Usually 15–30 seconds. Ranking and recommendation will appear when complete."
               />
             </div>
+          ) : data.documents.length > 2 && data.status === "COMPLETED" && !rankUi ? (
+            <ResultsSkeleton count={data.documents.length} />
           ) : rankUi && data.documents.length > 2 ? (
             <div className="animate-fade-in rounded-2xl border border-slate-200 bg-white p-6 shadow-soft">
               <HowWeRankExplanation initiallyExpanded={false} />
@@ -1361,7 +1504,7 @@ export default function ComparePage() {
                     <tr className="border-b border-slate-200">
                       <th className="px-4 py-3 font-bold text-slate-700">Rank</th>
                       <th className="px-4 py-3 font-bold text-slate-700">Candidate</th>
-                      <th className="px-4 py-3 font-bold text-slate-700">Total</th>
+                      <th className="px-4 py-3 font-bold text-slate-700">{FEATURE_FLAGS.HIDE_RAW_TOTAL ? "Verdict" : "Total"}</th>
                       {rankUi.contextUsed && <th className="px-4 py-3 font-bold text-slate-700">JD Fit</th>}
                       <th className="px-4 py-3 font-bold text-slate-700">Dimensions</th>
                       <th className="px-4 py-3 font-bold text-slate-700">Risks & Interview</th>
@@ -1395,27 +1538,65 @@ export default function ComparePage() {
                                 <RankingConfidenceBadge candidate={doc} nextCandidate={nextDoc} />
                               </div>
                           <div className="mt-2 flex flex-wrap gap-2 text-xs">
-                            <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 font-semibold ${scoreTextColor(doc.clarity)}`}>
-                              <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                              </svg>
-                              Clarity {doc.clarity}/5
+                            <span
+                              className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 font-semibold ${scoreTextColor(doc.clarity)}`}
+                              title="Structure & clarity of the resume (sections, bullet density). Higher = easier to screen."
+                            >
+                              Structure {doc.clarity}/5 · {scoreLabel(doc.clarity)}
                             </span>
-                            <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 font-semibold ${scoreTextColor(doc.riskHygiene)}`}>
-                              <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                              </svg>
-                              Hygiene {doc.riskHygiene}/5
+                            <span
+                              className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 font-semibold ${scoreTextColor(doc.riskHygiene)}`}
+                              title="Risk hygiene — higher is safer (fewer red-flag phrases, clearer dates, quantified results)."
+                            >
+                              Safety {doc.riskHygiene}/5 · {scoreLabel(doc.riskHygiene)}
                             </span>
+                            {doc.enhanced?.tieBreakers?.experienceYears != null && doc.enhanced.tieBreakers.experienceYears > 0 && (
+                              <span
+                                className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 font-semibold text-slate-700"
+                                title="Total years of experience inferred from date ranges on the resume."
+                              >
+                                {doc.enhanced.tieBreakers.experienceYears}y exp
+                              </span>
+                            )}
+                            {doc.enhanced?.tieBreakers?.quantifiedAchievementsCount != null && doc.enhanced.tieBreakers.quantifiedAchievementsCount > 0 && (
+                              <span
+                                className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 font-semibold text-slate-700"
+                                title="Number of bullets with concrete metrics (%, $, growth, counts)."
+                              >
+                                {doc.enhanced.tieBreakers.quantifiedAchievementsCount} metric{doc.enhanced.tieBreakers.quantifiedAchievementsCount === 1 ? "" : "s"}
+                              </span>
+                            )}
                           </div>
                         </td>
                         <td className="px-4 py-4">
-                          <div className="flex flex-col items-center">
-                            <span className="text-2xl font-bold text-slate-900">{doc.total}</span>
-                            <span className="text-xs font-medium text-slate-500">
-                              out of 30{FEATURE_FLAGS.FIX_PERCENTAGE_BUG ? ` (${calculateConsistentPercentage(doc.total, 30)}%)` : ""}
-                            </span>
-                          </div>
+                          {(() => {
+                            const verdict = candidateVerdict({
+                              total: doc.total,
+                              contextUsed: rankUi.contextUsed,
+                              contextFitPercent: doc.contextFitPercent
+                            });
+                            return (
+                              <div className="flex flex-col items-center">
+                                <span
+                                  className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-semibold ${verdict.color}`}
+                                  title={`Recruiter action: ${verdict.blurb}`}
+                                >
+                                  {verdict.label}
+                                </span>
+                                <span className="mt-1 text-[11px] text-slate-500">
+                                  {verdict.blurb}
+                                </span>
+                                {!FEATURE_FLAGS.HIDE_RAW_TOTAL && (
+                                  <>
+                                    <span className="mt-1.5 text-2xl font-bold text-slate-900">{doc.total}</span>
+                                    <span className="text-xs font-medium text-slate-500">
+                                      out of 30{FEATURE_FLAGS.FIX_PERCENTAGE_BUG ? ` (${calculateConsistentPercentage(doc.total, 30)}%)` : ""}
+                                    </span>
+                                  </>
+                                )}
+                              </div>
+                            );
+                          })()}
                         </td>
                         {rankUi.contextUsed && (
                           <td className="px-4 py-4">
@@ -1436,10 +1617,19 @@ export default function ComparePage() {
                         )}
                         <td className="px-4 py-3">
                           <div className="grid gap-2">
-                            {doc.dimensions.map((d) => (
+                            {doc.dimensions.map((d) => {
+                              const isRiskDim = d.dimension === "Risk Signals" || d.dimension === "Risk & Compliance";
+                              const displayLabel = isRiskDim ? "Risk Hygiene" : d.dimension;
+                              return (
                               <div key={d.dimension} className="rounded border border-slate-200 p-2">
                                 <div className="flex items-center justify-between text-xs">
-                                  <span className="font-semibold text-slate-700">{d.dimension}</span>
+                                  <span
+                                    className="font-semibold text-slate-700"
+                                    title={isRiskDim ? "Higher score = fewer red flags. 5/5 means no gaps, vague claims, or buzzwords." : undefined}
+                                  >
+                                    {displayLabel}
+                                    {isRiskDim && <span className="ml-1 text-[10px] font-normal text-slate-500">(higher = safer)</span>}
+                                  </span>
                                   <span className={`rounded px-1.5 py-0.5 text-xs font-semibold ${scoreTextColor(d.score)}`}>{d.score}/5 {scoreLabel(d.score)}</span>
                                 </div>
                                 <div className="mt-1 h-2 w-full rounded-full bg-slate-100">
@@ -1447,7 +1637,8 @@ export default function ComparePage() {
                                 </div>
                                 {d.scoreReason && <div className="mt-1.5 text-xs text-slate-600 italic">{d.scoreReason}</div>}
                               </div>
-                            ))}
+                              );
+                            })}
                           </div>
                         </td>
                         <td className="px-4 py-3 text-slate-700">
@@ -1503,7 +1694,7 @@ export default function ComparePage() {
 
               {hiringView === "dashboard" ? (
                 !hiringUi ? (
-                  <div className="mt-5 rounded border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">Loading hiring dashboard...</div>
+                  <ResultsSkeleton count={2} />
                 ) : (() => {
                   const c1 = hiringUi.candidates[0];
                   const c2 = hiringUi.candidates[1];
@@ -1559,7 +1750,9 @@ export default function ComparePage() {
                               <div key={c.label}>
                                 <div className="flex items-center justify-between text-xs text-slate-500">
                                   <span className="font-medium">{c.label} {isWinner && vs?.strength !== "none" && vs?.strength !== "weak" && <span className="text-emerald-600">(Stronger)</span>}</span>
-                                  <span className="font-semibold text-slate-900">{c.total}/30</span>
+                                  {!FEATURE_FLAGS.HIDE_RAW_TOTAL && (
+                                    <span className="font-semibold text-slate-900">{c.total}/30</span>
+                                  )}
                                 </div>
                                 <div className="mt-1 h-3 w-full rounded-full bg-slate-100">
                                   <div className={`h-3 rounded-full ${isWinner && vs?.strength !== "none" ? "bg-emerald-500" : "bg-slate-400"}`} style={{ width: `${Math.round((c.total / maxT) * 100)}%` }} />

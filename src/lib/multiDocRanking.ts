@@ -50,16 +50,115 @@ const STOPWORDS = new Set(
     "in", "into", "is", "it", "of", "on", "or", "that", "the", "this",
     "to", "with", "will", "you", "your", "our", "we", "they", "their",
     "experience", "skills", "strong", "ability", "must", "nice", "have",
-    "role", "requirements", "responsibilities", "preferred", "plus", "years"
+    "role", "requirements", "responsibilities", "preferred", "plus", "years",
+    // Recruiter-noise terms that always match any resume and pollute JD Fit %
+    "team", "teams", "work", "working", "job", "jobs", "position", "positions",
+    "candidate", "candidates", "applicant", "applicants", "opportunity",
+    "product", "products", "business", "company", "organization",
+    "environment", "industry", "background", "knowledge", "understanding",
+    "including", "related", "similar", "other", "such", "can", "able",
+    "good", "great", "excellent", "proven", "demonstrated", "passionate",
+    "looking", "seeking", "hire", "hiring", "join", "join us", "apply",
+    "must-have", "must-haves", "nice-to-have", "nice-to-haves", "day-to-day"
   ].map((w) => w.toLowerCase())
 );
+
+// Common JD ↔ resume synonyms so "ML" matches "machine learning".
+// Values are all lowercase; a keyword matches if any alias appears in the resume.
+const KEYWORD_ALIASES: Record<string, string[]> = {
+  "ml": ["machine learning"],
+  "machine learning": ["ml"],
+  "ai": ["artificial intelligence"],
+  "artificial intelligence": ["ai"],
+  "nlp": ["natural language processing"],
+  "js": ["javascript"],
+  "javascript": ["js", "ecmascript"],
+  "ts": ["typescript"],
+  "typescript": ["ts"],
+  "py": ["python"],
+  "python": ["py"],
+  "k8s": ["kubernetes"],
+  "kubernetes": ["k8s"],
+  "aws": ["amazon web services"],
+  "gcp": ["google cloud", "google cloud platform"],
+  "azure": ["microsoft azure"],
+  "pm": ["product manager", "product management"],
+  "product manager": ["pm", "product management"],
+  "product management": ["pm", "product manager"],
+  "ux": ["user experience"],
+  "ui": ["user interface"],
+  "qa": ["quality assurance"],
+  "ci/cd": ["continuous integration", "continuous deployment", "cicd"],
+  "cicd": ["ci/cd"],
+  "sql": ["postgresql", "mysql", "postgres"],
+  "nosql": ["mongodb", "dynamodb", "cassandra"],
+  "react": ["react.js", "reactjs"],
+  "node": ["node.js", "nodejs"],
+  "rest": ["restful", "rest api"],
+  "graphql": ["gql"]
+};
+
+/**
+ * Domain concept clusters — free semantic intelligence.
+ *
+ * When a JD keyword belongs to one of these clusters, every other term
+ * in the same cluster is treated as an alias. This makes "fintech" match
+ * "payments", "banking" match "financial services", "devops" match "sre", etc.
+ * without any API calls.
+ */
+const DOMAIN_CLUSTERS: string[][] = [
+  // Finance / Fintech
+  ["fintech", "payments", "banking", "financial services", "lending", "insurance", "wealth management", "capital markets"],
+  // Healthcare
+  ["healthcare", "health tech", "medtech", "clinical", "ehr", "electronic health records", "hipaa", "patient", "pharma"],
+  // E-commerce / Retail
+  ["ecommerce", "e-commerce", "retail", "marketplace", "checkout", "cart", "merchandising", "catalog"],
+  // DevOps / SRE / Platform
+  ["devops", "sre", "site reliability", "platform engineering", "infrastructure", "devsecops"],
+  // Data roles
+  ["data science", "data scientist", "data analyst", "analytics engineer", "bi", "business intelligence"],
+  // Marketing
+  ["growth", "performance marketing", "seo", "sem", "paid acquisition", "content marketing", "crm"],
+  // Design
+  ["ux", "user experience", "product design", "ui design", "user research", "usability"],
+  // Security
+  ["security", "cybersecurity", "appsec", "infosec", "pentest", "penetration testing", "soc", "devsecops"],
+  // Mobile
+  ["mobile", "ios", "android", "react native", "flutter", "swift", "kotlin"],
+  // Cloud
+  ["cloud", "aws", "azure", "gcp", "google cloud", "amazon web services"],
+  // HR / Talent
+  ["hr", "human resources", "talent acquisition", "recruiting", "people ops", "hris"],
+];
+
+/** Returns all aliases for a keyword including domain-cluster members. */
+function allAliases(keyword: string): string[] {
+  const kw = keyword.toLowerCase();
+  const direct = KEYWORD_ALIASES[kw] ?? [];
+  const clusterPeers: string[] = [];
+  for (const cluster of DOMAIN_CLUSTERS) {
+    if (cluster.includes(kw)) {
+      clusterPeers.push(...cluster.filter((t) => t !== kw));
+      break;
+    }
+  }
+  return [...new Set([...direct, ...clusterPeers])];
+}
 
 const CONTEXT_PHRASES: Record<DecisionLens, string[]> = {
   HIRING: [
     "product management", "stakeholder management", "roadmap", "go-to-market",
     "user research", "agile", "scrum", "safe", "kanban", "jira", "confluence",
     "sql", "analytics", "kpi", "okrs", "a/b", "experimentation", "api",
-    "microservices", "saas", "b2b", "b2c", "pricing", "discovery", "delivery"
+    "microservices", "saas", "b2b", "b2c", "pricing", "discovery", "delivery",
+    // AI / ML / data — include short acronyms AND spelled-out forms.
+    // When a JD uses "ML", the alias map expands it to "machine learning"
+    // at match time so resumes using either form get credit.
+    "ml", "ai", "nlp", "llm",
+    "machine learning", "artificial intelligence", "deep learning",
+    "natural language processing", "computer vision", "data science",
+    "data engineering", "mlops", "large language model",
+    "recommender systems", "feature engineering"
   ],
   RFP: [
     "requirements", "scope", "deliverables", "timeline", "milestones",
@@ -109,7 +208,9 @@ export function extractContextKeywords(params: {
   const words = normalized
     .split(" ")
     .map((w) => w.trim())
-    .filter((w) => w.length >= 3 && !STOPWORDS.has(w));
+    // Allow 2-char technical tokens (ml, ai, js, ts, py, ux, qa, pm) so the
+    // alias map can resolve them to their long form in the resume.
+    .filter((w) => w.length >= 2 && !STOPWORDS.has(w));
 
   const counts = new Map<string, number>();
   for (const w of words) counts.set(w, (counts.get(w) ?? 0) + 1);
@@ -124,13 +225,29 @@ export function extractContextKeywords(params: {
   return keywords;
 }
 
+function keywordPresent(norm: string, keyword: string): boolean {
+  const kw = keyword.toLowerCase();
+  const variants = [kw, ...allAliases(kw)];
+  for (const variant of variants) {
+    // Word-boundary match for alpha-only tokens prevents "lead" matching
+    // "leading" or "lead time" and "sql" matching "mysqli" etc.
+    if (/^[a-z][a-z0-9]*$/.test(variant)) {
+      const re = new RegExp(`\\b${variant}\\b`);
+      if (re.test(norm)) return true;
+    } else if (norm.includes(variant)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 function matchKeywords(params: { keywords: string[]; haystack: string }) {
   const { keywords, haystack } = params;
   const norm = normalizeForMatch(haystack);
   const matched: string[] = [];
   const missing: string[] = [];
   for (const kw of keywords) {
-    if (norm.includes(kw.toLowerCase())) matched.push(kw);
+    if (keywordPresent(norm, kw)) matched.push(kw);
     else missing.push(kw);
   }
   const fit = keywords.length > 0 ? Math.round((matched.length / keywords.length) * 100) : 0;
@@ -188,40 +305,96 @@ function scoreReasonBullet(score: number, evidenceSnippet: string): string {
   return "Claims are vague or unsupported \u2014 needs clarification before shortlisting.";
 }
 
+const HIRING_DIMENSION_PROMPTS: Record<string, { question: string; proof: string }> = {
+  "Role Fit": {
+    question:
+      "Describe a project in the last 18 months that most closely resembles what this role would ask you to do on day one. What did you build, and which part of it was uniquely yours?",
+    proof:
+      "Share a PRD, architecture doc, or dashboard from that project; walk through your specific contribution vs the team's."
+  },
+  "Scope & Seniority": {
+    question:
+      "What is the largest scope you've personally owned — team size, budget, or business impact? Give a concrete number and the timeframe.",
+    proof:
+      "Share an org chart, roadmap, or OKR doc showing scope; name the stakeholders you aligned and the decisions you owned."
+  },
+  "Evidence & Metrics": {
+    question:
+      "Pick your most-impactful result. Give the baseline, the change you drove, the absolute number, and the measurement window. How was it attributed to your work?",
+    proof:
+      "Share the dashboard screenshot, experiment write-up, or report that measured the outcome."
+  },
+  "Ownership & Leadership": {
+    question:
+      "Describe a time you drove a cross-functional initiative end-to-end. Who else was involved, and what would have stalled without you?",
+    proof:
+      "Share a decision log, post-mortem, or retro doc that names you as the driver."
+  },
+  "Clarity & Structure": {
+    question:
+      "Walk me through a recent hard trade-off. Structure it as: context → options you considered → decision → result.",
+    proof:
+      "Share a written doc (RFC, proposal, 1-pager) you authored that was read by leadership."
+  },
+  "Risk Signals": {
+    question:
+      "Are there gaps, short stints, or transitions on the resume you'd want to explain up-front? Walk me through the context.",
+    proof:
+      "Offer two references who can speak to your last 24 months of work."
+  }
+};
+
 function makeInterviewQuestions(params: {
   lens: DecisionLens;
   missingKeywords: string[];
+  weakDimensions?: { dimension: string; score: number }[];
 }) {
-  const { lens, missingKeywords } = params;
-  const top = missingKeywords.slice(0, 3);
-  if (top.length === 0) {
-    return {
-      verifyQuestions: [
-        lens === "HIRING"
-          ? "Walk me through your highest-impact project. What did you own, what changed, and what measurable result did you deliver?"
-          : lens === "RFP"
-            ? "Show how you will meet the top requirements and how you will prove acceptance in delivery."
-            : "What is the buyer's problem, and what proof do you have that your solution improves outcomes?"
-      ],
-      proofRequests: [
-        lens === "HIRING"
-          ? "Share an artifact (PRD/roadmap/dashboard) that shows your ownership and impact."
-          : lens === "RFP"
-            ? "Provide a requirements coverage matrix with referenced evidence sections."
-            : "Provide a case study with baseline, metric change, and timeframe."
-      ]
-    };
+  const { lens, missingKeywords, weakDimensions } = params;
+  const top = missingKeywords.slice(0, 2);
+  const verify: string[] = [];
+  const proof: string[] = [];
+
+  // 1) JD-specific questions (only meaningful when the JD actually provided keywords).
+  for (const kw of top) {
+    verify.push(
+      `"${kw}" is listed in the JD but not evident on the resume. Walk me through a project where you used it — baseline, change you drove, measurable outcome, and timeframe.`
+    );
+    proof.push(
+      `Share an artifact proving "${kw}" (doc, dashboard, plan, PR, slide) and explain your exact ownership.`
+    );
   }
-  return {
-    verifyQuestions: top.map(
-      (kw) =>
-        `Tell me about a recent example involving "${kw}". What was the baseline, what did you change, and what measurable result did you deliver (with timeframe)?`
-    ),
-    proofRequests: top.map(
-      (kw) =>
-        `Show an artifact proving "${kw}" (doc, dashboard, plan, slide) and explain your exact ownership.`
-    )
-  };
+
+  // 2) Dimension-targeted questions for the candidate's two weakest areas.
+  // These are personalized per candidate so the interview kit doesn't repeat.
+  if (lens === "HIRING" && weakDimensions && weakDimensions.length > 0) {
+    for (const wd of weakDimensions.slice(0, 2)) {
+      const prompt = HIRING_DIMENSION_PROMPTS[wd.dimension];
+      if (!prompt) continue;
+      verify.push(`[${wd.dimension} · ${wd.score}/5] ${prompt.question}`);
+      proof.push(`[${wd.dimension}] ${prompt.proof}`);
+    }
+  }
+
+  if (verify.length === 0) {
+    verify.push(
+      lens === "HIRING"
+        ? "Walk me through your highest-impact project. What did you own, what changed, and what measurable result did you deliver?"
+        : lens === "RFP"
+          ? "Show how you will meet the top requirements and how you will prove acceptance in delivery."
+          : "What is the buyer's problem, and what proof do you have that your solution improves outcomes?"
+    );
+  }
+  if (proof.length === 0) {
+    proof.push(
+      lens === "HIRING"
+        ? "Share an artifact (PRD/roadmap/dashboard) that shows your ownership and impact."
+        : lens === "RFP"
+          ? "Provide a requirements coverage matrix with referenced evidence sections."
+          : "Provide a case study with baseline, metric change, and timeframe."
+    );
+  }
+
+  return { verifyQuestions: verify, proofRequests: proof };
 }
 
 /**
@@ -243,11 +416,17 @@ export function assessRecommendation(params: {
   const weakThreshold = 14;
 
   // ── RULE 1: JD provided but NO candidate matches the role ──
+  // This is the "astronomy JD vs PM resume" case — refuse to recommend
+  // anyone. Copy is explicit about domain mismatch so recruiters don't
+  // over-trust the ranking.
   if (contextUsed && topContextFit < 20) {
     return {
       strength: "none",
-      headline: "No candidate matches your job description",
-      subtext: `The top resume scores ${topTotal}/30 on structure, but only ${topContextFit}% JD keyword match. These resumes don't align with the role you described. Consider sourcing candidates with relevant domain experience.`
+      headline: "None of these resumes match the job description",
+      subtext:
+        topContextFit === 0
+          ? `Zero keyword overlap between the JD and any resume. The candidates may have well-structured resumes, but their experience is in a different domain than what you described. Source candidates with relevant domain experience — ranking these further would be misleading.`
+          : `The strongest resume only overlaps ${topContextFit}% with the JD keywords. These resumes don't align with the role you described. Ranking order is based on general resume quality, not role fit — treat the #1 slot with caution.`
     };
   }
 
@@ -416,7 +595,11 @@ export function rankDocuments(
       };
     });
 
-    const kit = makeInterviewQuestions({ lens, missingKeywords: s.missing });
+    const kit = makeInterviewQuestions({
+      lens,
+      missingKeywords: s.missing,
+      weakDimensions: weakDims.map((d) => ({ dimension: d.dimension, score: d.score }))
+    });
     const combined = `${s.doc.filename}\n${s.doc.normalizedText}\n${s.doc.attributes.map((a) => a.value).join("\n")}`;
     const enhanced = calculateEnhancedMetadata(combined, jdText);
 
@@ -428,8 +611,8 @@ export function rankDocuments(
       clarity: s.clarity,
       riskHygiene: s.riskHygiene,
       contextFitPercent: s.contextFitPercent,
-      matchedKeywords: s.matched.slice(0, 6),
-      missingKeywords: s.missing.slice(0, 6),
+      matchedKeywords: s.matched.slice(0, 12),
+      missingKeywords: s.missing.slice(0, 12),
       dimensions: s.dimensions.map((d) => ({
         dimension: d.dimension,
         score: d.score,

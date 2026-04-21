@@ -78,6 +78,8 @@ function extractTotalExperience(resumeContent: string): number {
     if (parts && parts.length >= 1) {
       const startYear = parseInt(parts[0], 10);
       const endYear = parts[1] ? parseInt(parts[1], 10) : currentYear;
+      // Reject implausible years: phone numbers, zip codes, etc.
+      if (startYear < 1950 || startYear > currentYear || endYear < startYear || endYear > currentYear + 1) continue;
       if (!Number.isNaN(startYear) && !Number.isNaN(endYear)) {
         totalMonths += (endYear - startYear) * 12;
       }

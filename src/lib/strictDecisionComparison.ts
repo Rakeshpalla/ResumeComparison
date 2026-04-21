@@ -91,10 +91,31 @@ function tokens(input: string) {
   return normalizeText(input).toLowerCase();
 }
 
+function escapeRegex(input: string) {
+  return input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+// Word-boundary for alpha-only tokens prevents "senior" → "senior year",
+// "led" → "scheduled", "lead" → "leading". Phrases containing non-word
+// characters (e.g. "c++", "a/b", "case study") fall back to substring.
+function matchesKeyword(haystack: string, keyword: string) {
+  if (!keyword) return false;
+  const kw = keyword.toLowerCase();
+  const alphaPure = /^[a-z][a-z0-9]*$/.test(kw);
+  if (alphaPure) {
+    try {
+      return new RegExp(`\\b${escapeRegex(kw)}\\b`).test(haystack);
+    } catch {
+      return haystack.includes(kw);
+    }
+  }
+  return haystack.includes(kw);
+}
+
 function countHits(haystack: string, keywords: string[]) {
   let hits = 0;
   for (const keyword of keywords) {
-    if (haystack.includes(keyword)) hits += 1;
+    if (matchesKeyword(haystack, keyword)) hits += 1;
   }
   return hits;
 }
@@ -189,12 +210,22 @@ function extractCandidateLines(doc: StrictDocumentInput) {
   return [...attributeLines, ...lines];
 }
 
+// A true "metric" needs context — a bare integer is usually a phone digit,
+// ZIP code, or graduation year, not proof of impact.
+const METRIC_REGEX =
+  /(\d+\s*%|\d+\.\d+\s*[%x]?|\$\s?\d+(?:[.,]\d+)?\s?(?:k|m|bn|million|billion)?|\b\d+(?:[.,]\d+)?\s?(?:x|%|users?|customers?|clients?|accounts?|orders?|requests?|rps|qps|ms|hrs?|hours?|days?|weeks?|months?|years?|yrs?|k|m|bn|million|billion|pts?|bps)\b|\b(?:reduced|increased|improved|grew|cut|saved|lifted|boosted|scaled|drove|delivered|shipped|shipped\s+to|raised|generated)\b[^.\n]{0,60}\b\d+(?:[.,]\d+)?\s?[%x]?\b)/i;
+
+// Caller passes already-lowercased text.
+function hasMetric(text: string) {
+  return METRIC_REGEX.test(text);
+}
+
 function pickEvidence(lines: string[], keywords: string[], maxItems = 3) {
   const scored = lines
     .map((line) => {
       const lower = line.toLowerCase();
       const hit = countHits(lower, keywords);
-      const hasNumber = /(\d+%|\d+\.\d+|\b\d+\b)/.test(line);
+      const hasNumber = hasMetric(lower);
       const score = hit * 3 + (hasNumber ? 2 : 0) + Math.min(line.length / 60, 2);
       return { line, score };
     })
@@ -211,18 +242,52 @@ function dimensionKeywords(lens: DecisionLens, dimension: string) {
 
   if (lens === "HIRING") {
     switch (dimension) {
+      // Role Fit = the *work* the candidate actually did (verbs + artifacts),
+      // not structural resume words. Structural words now live only in Clarity.
       case "Role Fit":
-        return base(["summary", "skills", "stack", "experience", "role", "engineer", "developer", "manager"]);
+        return base([
+          "built", "designed", "developed", "implemented", "shipped",
+          "architected", "deployed", "integrated", "launched",
+          "product", "platform", "system", "service", "pipeline",
+          "engineer", "developer", "manager", "analyst", "designer", "scientist"
+        ]);
+      // Seniority must be signaled by multi-word titles or concrete scope
+      // — bare "senior"/"lead" false-positive on "senior year", "lead time".
       case "Scope & Seniority":
-        return base(["senior", "lead", "principal", "staff", "architect", "managed", "ownership", "scope"]);
+        return base([
+          "senior engineer", "senior manager", "senior product", "senior director",
+          "principal engineer", "staff engineer", "lead engineer",
+          "tech lead", "team lead", "engineering manager", "product manager",
+          "director of", "head of", "vp of", "vice president",
+          "managed a team", "led a team", "direct reports", "headcount",
+          "budget of", "p&l", "owned a team", "reporting to me"
+        ]);
       case "Evidence & Metrics":
-        return base(["%", "reduced", "improved", "increased", "users", "latency", "cost", "revenue", "uptime"]);
+        return base([
+          "%", "reduced", "improved", "increased", "decreased", "grew",
+          "latency", "throughput", "revenue", "arr", "mrr", "cac", "ltv",
+          "conversion", "retention", "churn", "uptime", "p95", "p99", "sla"
+        ]);
       case "Ownership & Leadership":
-        return base(["owned", "led", "drove", "mentored", "stakeholder", "strategy", "cross-functional"]);
+        return base([
+          "owned", "led", "drove", "mentored", "coached", "spearheaded",
+          "stakeholder", "stakeholders", "strategy", "cross-functional",
+          "directly responsible", "end-to-end", "zero to one", "0 to 1"
+        ]);
+      // Clarity is about sectional structure — intentionally distinct from Role Fit.
       case "Clarity & Structure":
-        return base(["experience", "education", "skills", "projects", "summary", "certifications"]);
+        return base([
+          "summary", "objective", "education", "skills", "projects",
+          "certifications", "experience", "employment", "bullet", "—", "•"
+        ]);
+      // Red flags: vague timelines, buzzwords, inflated language, tenure risk.
       case "Risk Signals":
-        return base(["gap", "contract", "inconsistent", "over", "claimed", "leadership", "mismatch"]);
+        return base([
+          "gap", "career break", "unemployed", "looking for",
+          "familiar with", "exposure to", "knowledge of", "worked on",
+          "various", "multiple", "several", "best in class", "world class",
+          "rockstar", "ninja", "guru", "guarantee"
+        ]);
       default:
         return [];
     }
@@ -268,9 +333,10 @@ function dimensionKeywords(lens: DecisionLens, dimension: string) {
 
 function scoreFromEvidence(dimension: string, evidence: string[]) {
   const text = evidence.join("\n");
-  const hasNumbers = /(\d+%|\b\d+\b|\$|€|£)/.test(text);
+  const lower = text.toLowerCase();
+  const hasNumbers = hasMetric(lower);
   const hasSpecific = evidence.some((line) => line.length >= 45);
-  const hasScopeVerbs = /\b(owned|led|built|shipped|delivered|implemented|designed|launched|migrated|reduced|increased|improved)\b/i.test(
+  const hasScopeVerbs = /\b(owned|led|built|shipped|delivered|implemented|designed|launched|migrated|reduced|increased|improved|architected|authored|championed)\b/i.test(
     text
   );
   const missing = evidence.length === 1 && evidence[0].toLowerCase().startsWith("missing:");
@@ -283,20 +349,27 @@ function scoreFromEvidence(dimension: string, evidence: string[]) {
   if (hasNumbers) score += 1; // proof/metrics -> strongest
 
   // Risk dimensions are scored as "risk hygiene" (higher is safer).
+  // Evidence in these dims is *red flags*, so finding nothing is GOOD.
   if (dimension === "Risk Signals" || dimension === "Risk & Compliance") {
-    const redFlags = /\b(maybe|approximately|tbd|asap|best in class|world class|guarantee|guaranteed)\b/i.test(
-      text
-    );
-    if (missing) score = 2; // no evidence -> risky, but not absolute floor
-    if (redFlags) score = Math.max(1, score - 1);
+    const redFlagHits = (
+      lower.match(
+        /\b(maybe|approximately|tbd|asap|best in class|world class|rockstar|ninja|guru|guarantee|guaranteed|various|multiple|several|familiar with|exposure to|knowledge of|gap|career break|looking for)\b/g
+      ) || []
+    ).length;
+    if (missing) {
+      score = 5; // no red flags found -> safest
+    } else {
+      // Each red-flag hit trims one point. Floor at 1.
+      score = Math.max(1, 5 - redFlagHits);
+    }
   }
 
   return clampInt(score, 1, 5);
 }
 
 function evidenceQuality(evidence: string[]) {
-  const joined = evidence.join("\n");
-  const numericHits = (joined.match(/(\d+%|\b\d+\b|\$|€|£)/g) || []).length;
+  const joined = evidence.join("\n").toLowerCase();
+  const numericHits = (joined.match(new RegExp(METRIC_REGEX.source, "gi")) || []).length;
   const longLines = evidence.filter((line) => line.length >= 50).length;
   const scopeHits =
     (joined.match(/\b(owned|led|built|shipped|delivered|implemented|designed|launched|migrated)\b/gi) || []).length;
@@ -505,15 +578,24 @@ function docRiskHygieneScore(doc: StrictDocumentInput, lens: DecisionLens) {
   const text = tokens(doc.normalizedText);
   const redFlags =
     lens === "HIRING"
-      ? ["gap", "inconsistent", "contract only", "freelance"]
+      ? [
+          "gap", "career break", "looking for", "unemployed",
+          "familiar with", "exposure to", "knowledge of",
+          "various", "multiple", "several",
+          "rockstar", "ninja", "guru", "best in class", "world class"
+        ]
       : lens === "RFP"
-        ? ["tbd", "assumption", "depends on", "out of scope"]
+        ? ["tbd", "assumption", "depends on", "out of scope", "approximately"]
         : ["guarantee", "best in class", "world class", "no risk"];
 
   const redHits = countHits(text, redFlags);
-  const hasNumbers = /(\d+%|\b\d+\b|\$|€|£)/.test(text);
+  const hasNumbers = hasMetric(text);
+  const thin = text.length < 800; // very short resume -> low confidence
+  const noDates = !/\b(19|20)\d{2}\b/.test(text); // resume without dates is a red flag
   let score = 4 - Math.min(3, redHits);
   if (!hasNumbers) score -= 1;
+  if (thin) score -= 1;
+  if (noDates) score -= 1;
   return clampInt(score, 1, 5);
 }
 

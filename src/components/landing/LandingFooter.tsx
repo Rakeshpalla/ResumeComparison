@@ -14,7 +14,7 @@ export default function LandingFooter() {
               <FileText className="h-4 w-4 text-white" strokeWidth={1.5} />
             </div>
             <span className="font-display text-base font-semibold text-white">
-              Resume Comparison Engine
+              HireSignal
             </span>
           </div>
 
@@ -47,7 +47,7 @@ export default function LandingFooter() {
         </div>
 
         <div className="mt-8 border-t border-white/5 pt-6 text-center text-xs text-zinc-600">
-          © {new Date().getFullYear()} Resume Comparison Engine. All rights reserved.
+          © 2026 HireSignal. All rights reserved.
         </div>
       </div>
     </footer>

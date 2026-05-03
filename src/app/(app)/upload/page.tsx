@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { Cloud } from "lucide-react";
 import { DocumentAnalyzer } from "../../../components/DocumentAnalyzer";
+import { EmailCaptureModal } from "../../../components/EmailCaptureModal";
 import { trackUpload } from "../../../lib/analytics-events";
 
 type UploadStatus = "idle" | "uploading" | "processing" | "complete" | "error";
@@ -29,6 +30,8 @@ export default function UploadPage() {
   const [contextText, setContextText] = useState<string>("");
   const [isDragging, setIsDragging] = useState(false);
   const [showJdInput, setShowJdInput] = useState(true);
+  const [showEmailGate, setShowEmailGate] = useState(false);
+  const pendingSessionIdRef = useRef<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const allowedTypes = new Set([
@@ -73,8 +76,8 @@ export default function UploadPage() {
   }
 
   function validateFiles(fileArray: File[]) {
-    if (fileArray.length < 2 || fileArray.length > 5) {
-      return "Upload between 2 and 5 files (PDF or DOCX).";
+    if (fileArray.length < 2 || fileArray.length > 25) {
+      return "Upload between 2 and 25 files (PDF or DOCX).";
     }
     if (fileArray.some((file) => !allowedTypes.has(file.type))) {
       return "Only PDF and DOCX files are supported.";
@@ -101,7 +104,7 @@ export default function UploadPage() {
     setUploadedDocs([]);
     setCurrentUploadName(null);
     if (selectedFiles.length === 0) {
-      setError("Select 2–5 files first.");
+      setError("Select 2–25 files first.");
       return false;
     }
     const validationError = validateFiles(selectedFiles);
@@ -223,7 +226,9 @@ export default function UploadPage() {
         throw new Error("Analysis failed for one or more resumes. Please try again.");
       }
       setStatus("complete");
-      window.location.replace(`/compare/${id}`);
+      // Show email gate before revealing results
+      pendingSessionIdRef.current = id;
+      setShowEmailGate(true);
       return true;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unexpected error.");
@@ -235,7 +240,7 @@ export default function UploadPage() {
   async function runGenerateInsights() {
     setError(null);
     if (selectedFiles.length === 0) {
-      setError("Select 2–5 files first.");
+      setError("Select 2–25 files first.");
       return;
     }
     if (!isUploaded || !sessionId) {
@@ -243,6 +248,12 @@ export default function UploadPage() {
       if (!ok) return;
     }
     await generateInsights();
+  }
+
+  function handleEmailSuccess() {
+    setShowEmailGate(false);
+    const id = pendingSessionIdRef.current;
+    if (id) window.location.replace(`/compare/${id}`);
   }
 
   const currentStep = selectedFiles.length === 0 ? 1 : isUploaded ? 3 : 2;
@@ -254,6 +265,8 @@ export default function UploadPage() {
   ] as const;
 
   return (
+    <>
+    {showEmailGate && <EmailCaptureModal onSuccess={handleEmailSuccess} />}
     <div className="relative">
       <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden" aria-hidden>
         <div className="absolute -top-36 -right-40 h-[560px] w-[560px] rounded-full bg-[#EFF6FF] blur-[100px]" />
@@ -271,7 +284,7 @@ export default function UploadPage() {
             Upload Resumes
           </h1>
           <p className="mx-auto mt-3 max-w-2xl text-base font-medium text-slate-600">
-            Upload 2–5 resumes and get instant side-by-side comparison with data-driven insights
+            Upload 2–25 resumes and get instant side-by-side comparison with AI-powered insights
           </p>
         </motion.div>
 
@@ -413,7 +426,7 @@ export default function UploadPage() {
                 </div>
                 <div>
                   <h3 className="font-display text-lg font-bold tracking-tight text-slate-900">Step 2: Upload resumes</h3>
-                  <p className="mt-1 text-sm font-medium text-slate-600">2–5 candidate files (PDF or DOCX)</p>
+                  <p className="mt-1 text-sm font-medium text-slate-600">2–25 candidate files (PDF or DOCX)</p>
                 </div>
               </div>
 
@@ -537,7 +550,7 @@ export default function UploadPage() {
                 </button>
 
                 <p className="relative z-[1] mt-4 text-xs font-medium text-slate-500">
-                  PDF & DOCX · min 2 · max 5 files
+                  PDF &amp; DOCX · min 2 · max 25 files
                 </p>
               </div>
 
@@ -797,5 +810,6 @@ export default function UploadPage() {
         </div>
       </div>
     </div>
+    </>
   );
 }

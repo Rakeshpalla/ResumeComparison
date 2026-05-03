@@ -18,16 +18,16 @@ export const viewport: Viewport = {
 
 export const metadata = {
   ...buildMetadata({
-    title: "Resume Comparison Engine",
+    title: "HireSignal | AI Resume Screening for Recruiters",
     description:
-      "Free resume comparison tool. Compare 2-5 resumes side-by-side in minutes. Used by hiring managers and recruiters to shortlist candidates, reduce bias, and export results. No signup required.",
+      "AI-powered resume screening for solo recruiters. Upload up to 25 candidates, get a structured shortlist in seconds. Free to use, no credit card required.",
     path: "/",
   }),
   metadataBase: new URL(getBaseUrl()),
   manifest: "/site.webmanifest",
   appleWebApp: {
     capable: true,
-    title: "Resume Comparison Engine",
+    title: "HireSignal",
     statusBarStyle: "default",
   },
   icons: {
@@ -37,12 +37,12 @@ export const metadata = {
 };
 
 const FAQ_DATA = [
-  { question: "How many resumes can I compare at once?", answer: "You can compare 2 to 5 resumes at once. Upload PDF or DOCX files and get a side-by-side analysis with ranking and export to Excel." },
-  { question: "Do I need to create an account?", answer: "No. Resume Comparison Engine works without signup. Just upload your resumes and optional job description to get started." },
-  { question: "Is Resume Comparison Engine free?", answer: "Yes. The tool is free to use for comparing resumes, with optional Excel export and hiring insights." },
-  { question: "Who is this tool for?", answer: "Hiring managers, recruiters, and anyone who needs to shortlist candidates quickly with a structured, consistent comparison." },
+  { question: "How many resumes can I compare at once?", answer: "You can compare 2 to 25 resumes at once. Upload PDF or DOCX files and get a side-by-side AI-powered ranking with export to Excel." },
+  { question: "Do I need to create an account?", answer: "No. HireSignal works without signup. Just upload your resumes and optional job description to get started." },
+  { question: "Is HireSignal free?", answer: "Yes. The free tier lets you compare up to 5 resumes per session, with no credit card required. A Pro tier with unlimited comparisons is coming soon." },
+  { question: "Who is this tool for?", answer: "Solo recruiters, hiring managers, and startup founders who need to shortlist candidates quickly with a structured, consistent comparison." },
   { question: "Can I paste a job description?", answer: "Yes. Adding a job description improves keyword fit scores, gap detection, and interview-style questions tailored to your role." },
-  { question: "What file formats are supported?", answer: "PDF and Microsoft Word (.docx) resumes are supported. Upload between two and five files per comparison session." },
+  { question: "What file formats are supported?", answer: "PDF and Microsoft Word (.docx) resumes are supported. Upload between two and twenty-five files per comparison session." },
 ];
 
 export default function RootLayout({ children }: { children: ReactNode }) {

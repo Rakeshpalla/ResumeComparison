@@ -26,14 +26,14 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             </div>
             <div className="hidden sm:block">
               <div className="font-display text-lg font-bold tracking-tight text-slate-900">
-                Resume Comparison Engine
+                HireSignal
               </div>
               <div className="mt-0.5 text-xs font-medium text-slate-600">
-                Make better hiring decisions, faster
+                AI resume screening for recruiters
               </div>
             </div>
             <div className="sm:hidden">
-              <div className="font-display text-base font-bold text-slate-900">RCE</div>
+              <div className="font-display text-base font-bold text-slate-900">HireSignal</div>
             </div>
           </Link>
           <div className="flex items-center gap-3">

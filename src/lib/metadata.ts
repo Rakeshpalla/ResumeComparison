@@ -6,9 +6,9 @@
  */
 import type { Metadata } from "next";
 
-const SITE_NAME = "Resume Comparison Engine";
+const SITE_NAME = "HireSignal";
 const DEFAULT_DESCRIPTION =
-  "Free resume comparison tool. Compare 2-5 resumes side-by-side in minutes. Used by hiring managers and recruiters to shortlist candidates, reduce bias, and make better hires. No signup required.";
+  "AI-powered resume screening for solo recruiters. Upload up to 25 candidates, get a structured shortlist in seconds. Free to use, no credit card required.";
 const TWITTER_HANDLE = process.env.NEXT_PUBLIC_TWITTER_HANDLE || "";
 const KEYWORDS = [
   "resume comparison",

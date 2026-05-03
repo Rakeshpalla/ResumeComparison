@@ -6,8 +6,8 @@ import { FileStack, FileType2, Target, LayoutGrid } from "lucide-react";
 const pillars = [
   {
     icon: FileStack,
-    title: "2–5 resumes",
-    subtitle: "Per session — only what you need.",
+    title: "2–25 resumes",
+    subtitle: "Per session — scale from a shortlist to a full batch.",
   },
   {
     icon: FileType2,
@@ -26,8 +26,6 @@ const pillars = [
   },
 ];
 
-const logos = ["Vercel", "Notion", "Stripe", "Figma", "Linear", "Gusto"];
-
 export default function TrustStrip() {
   return (
     <section
@@ -35,31 +33,6 @@ export default function TrustStrip() {
       aria-labelledby="trust-strip-heading"
     >
       <div className="mx-auto max-w-6xl px-6">
-        {/* Trusted-by logos */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-40px" }}
-          transition={{ duration: 0.35 }}
-          className="mb-12"
-        >
-          <p className="text-center text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">
-            Trusted by teams who hire fast
-          </p>
-          <div className="mt-5 flex flex-wrap items-center justify-center gap-x-8 gap-y-3">
-            {logos.map((name) => (
-              <div
-                key={name}
-                className="select-none text-sm font-semibold tracking-tight text-zinc-400 grayscale"
-                style={{ filter: "grayscale(1)" }}
-                aria-label={name}
-              >
-                {name}
-              </div>
-            ))}
-          </div>
-        </motion.div>
-
         <motion.div
           className="text-center"
           initial={{ opacity: 0, y: 12 }}

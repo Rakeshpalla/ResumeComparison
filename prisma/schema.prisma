@@ -95,6 +95,16 @@ enum DocumentStatus {
   FAILED
 }
 
+/// Email addresses collected at comparison gate — landing page and upload flow.
+model EmailCapture {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique @db.VarChar(255)
+  source    String   @default("landing_page") @db.VarChar(50)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("emails")
+}
+
 /// Product feedback from /feedback form (Neon/Prisma; no auth required for insert).
 model FeedbackResponse {
   id                String   @id @default(uuid())

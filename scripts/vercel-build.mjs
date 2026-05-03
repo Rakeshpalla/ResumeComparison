@@ -23,6 +23,14 @@ const opts = { stdio: "inherit", cwd: root, shell: true };
 
 try {
   execSync("npx prisma generate", opts);
+  // Run migrations against the real DB (no-op if already applied)
+  if (process.env.DATABASE_URL && !process.env.DATABASE_URL.includes("placeholder")) {
+    try {
+      execSync("npx prisma migrate deploy", opts);
+    } catch (migrateErr) {
+      console.warn("prisma migrate deploy failed (non-fatal):", migrateErr?.message ?? migrateErr);
+    }
+  }
   execSync("npx next build", opts);
 } catch (err) {
   process.exit(err?.status ?? 1);

@@ -36,9 +36,10 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       update: {},
       create: { email, source },
     });
-    return NextResponse.json({ ok: true });
   } catch (err) {
-    const msg = err instanceof Error ? err.message : "Unknown error.";
-    return NextResponse.json({ error: `Failed to save email: ${msg}` }, { status: 500 });
+    // Non-fatal: log and proceed so users are never blocked by a DB/migration issue.
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("[collect-email] DB error (non-fatal):", msg);
   }
+  return NextResponse.json({ ok: true });
 }

@@ -79,10 +79,10 @@ export function EmailCaptureModal({ onSuccess }: EmailCaptureModalProps) {
         </div>
 
         <h2 id="email-gate-title" className="font-display text-xl font-bold text-zinc-900">
-          Where should we send your results?
+          One last step to see your results
         </h2>
         <p className="mt-2 text-sm text-zinc-600">
-          Enter your email to unlock your comparison report. We'll also notify you when Pro features launch.
+          Enter your email to unlock your comparison report. We'll notify you when Pro features (history, CSV export) launch.
         </p>
 
         <form onSubmit={handleSubmit} noValidate className="mt-6 space-y-4">

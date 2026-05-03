@@ -4,6 +4,8 @@ import { prisma } from "../../../../../lib/db";
 import { sanitizePlainText } from "../../../../../lib/sanitize";
 import { decideLensForMany, rankDocuments } from "../../../../../lib/multiDocRanking";
 import type { StrictDocumentInput } from "../../../../../lib/strictDecisionComparison";
+import { aiRankDocuments } from "../../../../../lib/ai/aiRanking";
+import { isAiEnabled } from "../../../../../lib/ai/geminiClient";
 
 export const runtime = "nodejs";
 
@@ -77,7 +79,7 @@ async function handler(params: {
     return NextResponse.json({ error: "Session not found." }, { status: 404 });
   }
 
-  const docs = session.documents.slice(0, 5);
+  const docs = session.documents.slice(0, 25);
   if (docs.length < 2) {
     return NextResponse.json(
       { error: "Upload at least two documents to rank." },
@@ -100,20 +102,34 @@ async function handler(params: {
   // Hardcoded to HIRING lens for MVP
   const lens: "HIRING" = "HIRING";
 
-  const ranked = rankDocuments({
-    lens,
-    docs: inputs,
-    contextText: contextText ?? ""
-  });
+  // Try AI-powered ranking first; fall back to rule-based if unavailable or failed
+  let result = isAiEnabled()
+    ? await aiRankDocuments({ docs: inputs, contextText: contextText ?? "" })
+    : null;
+
+  const usedAi = result !== null;
+
+  if (!result) {
+    const ruleResult = rankDocuments({
+      lens,
+      docs: inputs,
+      contextText: contextText ?? ""
+    });
+    result = {
+      ranked: ruleResult.ranked,
+      recommendation: ruleResult.recommendation
+    };
+  }
 
   return NextResponse.json({
     status: session.status,
     lens,
     documentCount: docs.length,
-    contextUsed: Boolean(ranked.context),
-    contextKeywords: ranked.context?.keywords ?? [],
-    recommendation: ranked.recommendation,
-    ranked: ranked.ranked
+    aiPowered: usedAi,
+    contextUsed: Boolean(contextText?.trim()),
+    contextKeywords: [],
+    recommendation: result.recommendation,
+    ranked: result.ranked
   });
 }
 

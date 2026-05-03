@@ -47,9 +47,9 @@ export async function POST(
   if (!session) {
     return NextResponse.json({ error: "Session not found." }, { status: 404 });
   }
-  if (session.documents.length >= 5) {
+  if (session.documents.length >= 25) {
     return NextResponse.json(
-      { error: "Session already has 5 documents." },
+      { error: "Session already has 25 documents." },
       { status: 400 }
     );
   }
@@ -124,7 +124,7 @@ export async function POST(
       msg.includes("socket hang up");
     const status = isConnectionError ? 503 : 400;
     const userMessage = isConnectionError
-      ? "Storage connection was reset. Ensure Docker (MinIO) is running (docker compose up -d) and try again."
+      ? "Upload failed (storage connection error). Please try again in a moment."
       : msg;
     return NextResponse.json({ error: userMessage }, { status });
   }

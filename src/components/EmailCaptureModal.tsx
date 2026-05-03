@@ -79,10 +79,10 @@ export function EmailCaptureModal({ onSuccess }: EmailCaptureModalProps) {
         </div>
 
         <h2 id="email-gate-title" className="font-display text-xl font-bold text-zinc-900">
-          One last step to see your results
+          Your results are ready
         </h2>
         <p className="mt-2 text-sm text-zinc-600">
-          Enter your email to unlock your comparison report. We'll notify you when Pro features (history, CSV export) launch.
+          Drop your email and we'll show them instantly in your browser — no PDF, no email, no waiting. We'll also let you know when features like saved history and CSV export go live.
         </p>
 
         <form onSubmit={handleSubmit} noValidate className="mt-6 space-y-4">
@@ -132,7 +132,7 @@ export function EmailCaptureModal({ onSuccess }: EmailCaptureModalProps) {
         </form>
 
         <p className="mt-4 text-center text-xs text-zinc-500">
-          We'll never spam you. Unsubscribe anytime.
+          No spam. No selling your data. Unsubscribe anytime.
         </p>
       </div>
     </div>

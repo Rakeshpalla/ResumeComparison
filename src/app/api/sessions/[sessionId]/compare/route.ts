@@ -3,6 +3,8 @@ import { getUserFromRequest } from "../../../../../lib/auth";
 import { prisma } from "../../../../../lib/db";
 import { buildVerdict } from "../../../../../lib/verdict";
 import { buildDecisionSummary } from "../../../../../lib/decisionEngine";
+import { aiEnhanceVerdict } from "../../../../../lib/ai/aiVerdict";
+import { isAiEnabled } from "../../../../../lib/ai/geminiClient";
 
 export const runtime = "nodejs";
 
@@ -50,11 +52,31 @@ export async function GET(
     id: doc.id,
     filename: doc.filename
   }));
-  const verdict = buildVerdict(documents, rows);
-  const decision = buildDecisionSummary(documents, rows);
+
+  // Rule-based baseline (always computed — used as fallback)
+  const baseVerdict = buildVerdict(documents, rows);
+  const baseDecision = buildDecisionSummary(documents, rows);
+
+  // AI enhancement: enriches metric details and recommendation text
+  // Gracefully falls back to rule-based if AI fails or key is missing
+  let aiRan = false;
+  let verdict = baseVerdict;
+  let decision = baseDecision;
+
+  if (isAiEnabled()) {
+    const aiResult = await aiEnhanceVerdict(documents, rows, baseVerdict, baseDecision);
+    // aiEnhanceVerdict returns baseVerdict when AI fails — detect this by checking
+    // if the recommendation detail changed (AI writes richer detail)
+    if (aiResult.verdict.recommendation.detail !== baseVerdict.recommendation.detail) {
+      verdict = aiResult.verdict;
+      decision = aiResult.decision;
+      aiRan = true;
+    }
+  }
 
   return NextResponse.json({
     status: session.status,
+    aiPowered: aiRan,
     documents,
     rows,
     verdict,

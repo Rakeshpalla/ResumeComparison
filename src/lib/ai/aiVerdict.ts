@@ -121,7 +121,7 @@ export async function aiEnhanceVerdict(
   baseVerdict: Verdict,
   baseDecision: DecisionSummary
 ): Promise<{ verdict: Verdict; decision: DecisionSummary }> {
-  const raw = await callGeminiJson<AiVerdictResult>(buildPrompt(documents, rows), 40_000);
+  const raw = await callGeminiJson<AiVerdictResult>(buildPrompt(documents, rows));
 
   // If AI fails for any reason, return the base rule-based result unchanged
   if (!raw || !raw.metrics || !raw.recommendation) {

@@ -189,7 +189,7 @@ export async function aiRankDocuments(params: {
   const { docs, contextText } = params;
   const prompt = buildPrompt(docs, contextText);
 
-  const raw = await callGeminiJson<AiRankingResult>(prompt, 45_000);
+  const raw = await callGeminiJson<AiRankingResult>(prompt);
   if (!raw || !Array.isArray(raw.ranked)) return null;
 
   return sanitizeResult(raw, docs);

@@ -33,7 +33,7 @@ function retryDelaySecs(err: unknown): number {
 }
 
 /** Calls Gemini and returns parsed JSON, or null on any failure. Tries model candidates in order. */
-export async function callGeminiJson<T>(prompt: string, timeoutMs = 45_000): Promise<T | null> {
+export async function callGeminiJson<T>(prompt: string, timeoutMs = 8_000): Promise<T | null> {
   const client = getGeminiClient();
   if (!client) return null;
 
@@ -59,25 +59,13 @@ export async function callGeminiJson<T>(prompt: string, timeoutMs = 45_000): Pro
       return JSON.parse(text) as T;
 
     } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
       if (isRateLimit(err)) {
-        const wait = retryDelaySecs(err);
-        console.warn(`[AI] ${modelName} rate limited — waiting ${wait}s then retrying same model`);
-        await new Promise(r => setTimeout(r, wait * 1000));
-        // Retry this same model once after waiting
-        try {
-          const model = client.getGenerativeModel({
-            model: modelName,
-            generationConfig: { responseMimeType: "application/json", temperature: 0.2, maxOutputTokens: 8192 }
-          });
-          const result = await model.generateContent(prompt);
-          return JSON.parse(result.response.text()) as T;
-        } catch (retryErr) {
-          console.warn(`[AI] ${modelName} retry also failed — trying next model`);
-          continue;
-        }
+        // Don't wait — move to the next model immediately so the page doesn't stall
+        console.warn(`[AI] ${modelName} rate limited — skipping to next model`);
+        continue;
       }
       // 404 = model not found, try next
-      const msg = err instanceof Error ? err.message : String(err);
       if (msg.includes("404") || msg.includes("not found")) {
         continue;
       }

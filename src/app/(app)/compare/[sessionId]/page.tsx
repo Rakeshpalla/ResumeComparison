@@ -205,10 +205,12 @@ function candidateVerdict(params: {
     };
   }
 
-  if (total >= 24) return { label: "Strong", color: "text-emerald-700 bg-emerald-50 border-emerald-200", blurb: "Shortlist" };
-  if (total >= 20) return { label: "Good", color: "text-teal-700 bg-teal-50 border-teal-200", blurb: "Interview" };
-  if (total >= 16) return { label: "Fair", color: "text-amber-700 bg-amber-50 border-amber-200", blurb: "Borderline" };
-  if (total >= 12) return { label: "Weak", color: "text-orange-700 bg-orange-50 border-orange-200", blurb: "Probably pass" };
+  // Thresholds calibrated against 6 dimensions × max 5 = 30 pts.
+  // "Strong" requires 27+ (90%) — genuinely rare; "Good" requires 23+ (77%).
+  if (total >= 27) return { label: "Strong", color: "text-emerald-700 bg-emerald-50 border-emerald-200", blurb: "Shortlist" };
+  if (total >= 23) return { label: "Good", color: "text-teal-700 bg-teal-50 border-teal-200", blurb: "Interview" };
+  if (total >= 18) return { label: "Fair", color: "text-amber-700 bg-amber-50 border-amber-200", blurb: "Borderline" };
+  if (total >= 13) return { label: "Weak", color: "text-orange-700 bg-orange-50 border-orange-200", blurb: "Probably pass" };
   return { label: "Very weak", color: "text-red-700 bg-red-50 border-red-200", blurb: "Pass" };
 }
 
@@ -1601,16 +1603,26 @@ export default function ComparePage() {
                         {rankUi.contextUsed && (
                           <td className="px-4 py-4">
                             <div className="flex flex-col items-center">
-                              <div className={`text-2xl font-bold ${contextFitColor(doc.contextFitPercent)}`}>{doc.contextFitPercent}%</div>
-                              {doc.matchedKeywords.length > 0 && (
-                                <div className="mt-2 text-xs text-slate-600">
-                                  ✓ {doc.matchedKeywords.slice(0, 2).join(", ")}
+                              {rankUi.contextKeywords.length < 4 ? (
+                                <div className="text-center">
+                                  <div className="text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1">Thin JD</div>
+                                  <div className="mt-1 text-[10px] text-slate-500">Add more detail for reliable fit scoring</div>
                                 </div>
-                              )}
-                              {doc.missingKeywords.length > 0 && (
-                                <div className="mt-1 text-xs text-red-600">
-                                  ✗ {doc.missingKeywords.slice(0, 2).join(", ")}
-                                </div>
+                              ) : (
+                                <>
+                                  <div className={`text-2xl font-bold ${contextFitColor(doc.contextFitPercent)}`}>{doc.contextFitPercent}%</div>
+                                  {doc.matchedKeywords.length > 0 && (
+                                    <div className="mt-2 text-xs text-emerald-700">
+                                      ✓ {doc.matchedKeywords.slice(0, 3).join(", ")}
+                                    </div>
+                                  )}
+                                  {doc.missingKeywords.length > 0 && (
+                                    <div className="mt-1 text-xs text-red-600 font-medium">
+                                      ✗ Missing: {doc.missingKeywords.slice(0, 3).join(", ")}
+                                      {doc.missingKeywords.length > 3 && <span className="text-slate-400"> +{doc.missingKeywords.length - 3} more</span>}
+                                    </div>
+                                  )}
+                                </>
                               )}
                             </div>
                           </td>

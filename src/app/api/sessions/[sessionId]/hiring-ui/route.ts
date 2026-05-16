@@ -150,9 +150,9 @@ function verdictStrength(params: { totalA: number; totalB: number; delta: number
 } {
   const { totalA, totalB, delta } = params;
   const topTotal = Math.max(totalA, totalB);
-  const weakThreshold = 14;
-  const adequateThreshold = 18;
-  const strongThreshold = 22;
+  const weakThreshold = 18;
+  const adequateThreshold = 23;
+  const strongThreshold = 27;
 
   if (topTotal < weakThreshold) {
     return {

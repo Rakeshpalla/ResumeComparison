@@ -287,13 +287,16 @@ function riskLevelForScore(score: number): "High" | "Medium" | "Low" {
 /** Generate a human-readable reason for a dimension score */
 function scoreReason(score: number, dimension: string, evidenceSnippet: string): string {
   const noProof = evidenceSnippet.toLowerCase().includes("no scoped proof") || evidenceSnippet.toLowerCase().includes("missing");
+  const cite = (!noProof && evidenceSnippet.trim().length > 0)
+    ? ` e.g. "${evidenceSnippet.slice(0, 90)}${evidenceSnippet.length > 90 ? "…" : ""}"`
+    : "";
 
-  if (score === 5) return `Strong: Resume contains measurable outcomes and specific ownership proof for ${dimension.toLowerCase()}.`;
-  if (score === 4) return `Good: Solid evidence found for ${dimension.toLowerCase()}, but could be strengthened with more quantified results.`;
-  if (score === 3) return `Average: Some relevant content found for ${dimension.toLowerCase()}, but lacks hard metrics or concrete ownership signals.`;
-  if (score === 2) return `Weak: Limited evidence for ${dimension.toLowerCase()}. Claims are vague or generic without supporting proof.`;
-  if (noProof) return `Missing: No concrete evidence found for ${dimension.toLowerCase()}. This is a gap that needs to be addressed.`;
-  return `Very weak: Resume lacks meaningful proof for ${dimension.toLowerCase()}. Recruiter cannot validate claims.`;
+  if (score === 5) return `Strong evidence with quantified outcomes and clear ownership.${cite}`;
+  if (score === 4) return `Good evidence present, but could use more concrete metrics.${cite}`;
+  if (score === 3) return `Some signals present, but proof is vague — hard to validate without interview.${cite}`;
+  if (score === 2) return `Weak: claims are generic or unsupported.${cite}`;
+  if (noProof) return `No concrete evidence found for ${dimension.toLowerCase()} — meaningful gap.`;
+  return `Very weak signals — recruiter cannot validate claims without further screening.`;
 }
 
 /** Shorter version for risk bullets */
@@ -411,9 +414,9 @@ export function assessRecommendation(params: {
 }): { strength: RecommendationStrength; headline: string; subtext: string } {
   const { topTotal, gap, contextUsed, topContextFit } = params;
 
-  const strongThreshold = 22;
-  const adequateThreshold = 18;
-  const weakThreshold = 14;
+  const strongThreshold = 27;
+  const adequateThreshold = 23;
+  const weakThreshold = 18;
 
   // ── RULE 1: JD provided but NO candidate matches the role ──
   // This is the "astronomy JD vs PM resume" case — refuse to recommend
